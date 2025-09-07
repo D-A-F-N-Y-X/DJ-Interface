@@ -3,43 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>5 MIX Project</title>
+    <title>DJ Mix System - Professional</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            margin: 0;
             padding: 20px;
-            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .app-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
         }
         h1 {
-            color: #333;
-            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 2em;
         }
-        .container {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
+        p {
+            margin: 15px 0;
+            line-height: 1.6;
+        }
+        .launch-btn {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        .launch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+        }
+        .features {
+            text-align: left;
             margin: 20px 0;
+        }
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        .features li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .features li:before {
+            content: "🎵";
+            position: absolute;
+            left: 0;
         }
     </style>
 </head>
 <body>
-    <h1>Welcome to 5 MIX</h1>
-    
-    <div class="container">
-        <h2>About This Project</h2>
-        <p>This is the main page for the 5 MIX project repository.</p>
+    <div class="app-container">
+        <h1>🎧 DJ Mix System</h1>
+        <p><strong>Professional Edition</strong></p>
+        <p>Advanced DJ track mixing and recommendation system designed for mobile DJs.</p>
         
-        <h3>Getting Started</h3>
-        <p>To get started with this project:</p>
-        <ul>
-            <li>Clone the repository</li>
-            <li>Install dependencies</li>
-            <li>Run the application</li>
-        </ul>
+        <div class="features">
+            <h3>Features:</h3>
+            <ul>
+                <li>Professional mixing interface</li>
+                <li>Track editing capabilities</li>
+                <li>Mobile-optimized design</li>
+                <li>Works offline (PWA)</li>
+                <li>Installable on mobile devices</li>
+            </ul>
+        </div>
         
-        <p>If you're looking for documentation or more information, check the repository's README file.</p>
+        <a href="Interface.html" class="launch-btn">🚀 Launch DJ Mix App</a>
+        
+        <p style="margin-top: 20px; font-size: 14px; opacity: 0.8;">
+            Click above to start mixing your tracks professionally!
+        </p>
     </div>
 </body>
 </html>
