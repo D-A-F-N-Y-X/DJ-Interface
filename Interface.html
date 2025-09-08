@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DJ Mix Pro">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Advanced DJ track mixing and recommendation system for mobile DJs">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231a1a2e'/%3E%3Ccircle cx='50' cy='50' r='35' fill='none' stroke='%2300d4ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='35' r='8' fill='%2300d4ff'/%3E%3Cpath d='M35 65 Q50 55 65 65' stroke='%2300d4ff' stroke-width='3' fill='none'/%3E%3Ctext x='50' y='80' text-anchor='middle' fill='%23ffffff' font-family='Arial' font-size='10'%3EDJ%3C/text%3E%3C/svg%3E">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Preconnect to Google Fonts for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <title>DJ Mix System - Professional Edition</title>
+    <style>
+        /* ===== RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            height: 88vh; /* Safari-optimized: 844px - 94px (toolbar+address) = 750px available */
+            overflow: hidden;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: auto;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* ===== TOP SECTION ===== */
+        .top-section {
+            height: 35vh; /* Fixed height for 5 elements: current + 4 filters + reset/undo */
+            padding: 15px 15px 0 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 0px; /* Zero gap between elements for maximum compactness */
+        }
+        
+        /* ===== FILTER BARS ===== */
+        .filter-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            height: 45px; /* Exact height match */
+            display: flex;
+            align-items: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .filter-bar:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .filter-bar.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+        
+        .bar-label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .bar-content {
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* ===== ACTION CONTAINER ===== */
+        .action-container {
+            display: flex;
+            gap: 4px;
+            height: 47px; /* Container height */
+            margin: 0; /* Zero margin to eliminate any gaps */
+        }
+        
+        .action-box {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1); /* Neutral background for consistency */
+            border-radius: 12px;
+            padding: 12px 18px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            height: 45px; /* Exact height match with filter bars */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .action-box:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        /* Reset and Undo boxes - CONSISTENT STYLING */
+        .reset-box {
+            background: rgba(255, 255, 255, 0.1); /* Same neutral background */
+            border: 1px solid rgba(255, 107, 107, 0.4);
+        }
+        
+        .reset-box:hover {
+            background: rgba(255, 107, 107, 0.2); /* Red accent only on hover */
+        }
+        
+        .reset-box.active {
+            background: rgba(255, 107, 107, 0.3);
+            border-color: #ff6b6b;
+        }
+        
+        .undo-box {
+            background: rgba(255, 255, 255, 0.1); /* Same neutral background */
+            border: 1px solid rgba(0, 212, 255, 0.4);
+        }
+        
+        .undo-box:hover {
+            background: rgba(0, 212, 255, 0.2); /* Blue accent only on hover */
+        }
+        
+        .undo-box.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+        
+        .action-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+        
+        .action-content {
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .reset-icon, .undo-icon {
+            font-size: 14px;
+        }
+        
+        /* ===== BOTTOM SECTION ===== */
+        .bottom-section {
+            flex: 1; /* Takes remaining space */
+            min-height: 53vh; /* Minimum height to fill Safari viewport */
+            padding: 0 15px 15px 15px; /* ZERO top padding eliminates gap */
+            overflow: hidden;
+            margin: 0; /* No margins */
+        }
+        
+        .results-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            height: 100%;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+            padding: 15px; /* Reduced padding for more content space */
+        }
+        
+        .results-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+        
+        /* ===== TRACK ITEMS ===== */
+        .track-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .track-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+        
+        .track-item.selected {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+        }
+        
+        .track-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #00d4ff;
+        }
+        
+        .track-details {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .track-bpm {
+            font-weight: 500;
+        }
+        
+        .track-mood {
+            font-weight: 500;
+            color: #ffd700;
+        }
+        
+        /* ===== MODALS ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 15px;
+            padding: 25px;
+            min-width: 300px;
+            max-width: 90vw;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: scale(0.9);
+            transition: transform 0.2s;
+        }
+        
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-align: center;
+        }
+        
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .option-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 16px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .option-item:hover {
+            background: rgba(0, 212, 255, 0.3);
+            color: white;
+        }
+        
+        .option-item.remove-option {
+            background: rgba(255, 107, 107, 0.2) !important;
+            border: 1px solid rgba(255, 107, 107, 0.4) !important;
+        }
+        
+        .search-modal .modal-content {
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .search-input-modal {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-sizing: border-box;
+        }
+        
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        /* ===== PWA INSTALL PROMPT ===== */
+        .pwa-install-prompt {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #00d4ff, #007bff);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.3);
+            z-index: 10000;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .pwa-install-prompt.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .install-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .install-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .install-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .install-btn.install {
+            background: rgba(255, 255, 255, 0.9);
+            color: #1a1a2e;
+        }
+        
+        /* ===== ERROR STATE ===== */
+        .error-state {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* ===== NO TRACKS MESSAGE ===== */
+        .no-tracks-message {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        /* ===== KEYBOARD AVOIDANCE ===== */
+        @media screen and (max-width: 768px) {
+            body.keyboard-open {
+                height: 50vh; /* Reduce height when keyboard is open */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- PWA Install Prompt -->
+    <div class="pwa-install-prompt" id="pwaInstallPrompt">
+        <div style="font-weight: 600; margin-bottom: 5px;">📱 Install DJ Mix Pro</div>
+        <div style="font-size: 12px; opacity: 0.9; margin-bottom: 10px;">Add to home screen for the best experience!</div>
+        <div class="install-buttons">
+            <button class="install-btn" onclick="dismissInstallPrompt()">Later</button>
+            <button class="install-btn install" onclick="installPWA()">Install</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Top Section - Filter Bars + Dual Action Boxes -->
+        <div class="top-section">
+            <!-- Current Object / Search Bar -->
+            <div class="filter-bar" id="currentObjectBar" data-action="search">
+                <div class="bar-label">Current Track</div>
+                <div class="bar-content" id="currentObjectContent">Tap to search for a track...</div>
+            </div>
+            
+            <!-- PLACE Filter -->
+            <div class="filter-bar" id="placeBar" data-action="place">
+                <div class="bar-label">Place</div>
+                <div class="bar-content" id="placeContent">Tap to select...</div>
+            </div>
+            
+            <!-- MOOD Filter -->
+            <div class="filter-bar" id="moodBar" data-action="mood">
+                <div class="bar-label">Mood</div>
+                <div class="bar-content" id="moodContent">Tap to select...</div>
+            </div>
+            
+            <!-- STAR Filter -->
+            <div class="filter-bar" id="starBar" data-action="star">
+                <div class="bar-label">Star Rating</div>
+                <div class="bar-content" id="starContent">Tap to select...</div>
+            </div>
+            
+            <!-- Action Boxes -->
+            <div class="action-container">
+                <!-- RESET Box -->
+                <div class="action-box reset-box" id="resetBox" data-action="reset">
+                    <div class="action-label">Reset</div>
+                    <div class="action-content" id="resetContent">
+                        <span class="reset-icon">🔄</span>
+                        <span>RESET</span>
+                    </div>
+                </div>
+                
+                <!-- UNDO Box -->
+                <div class="action-box undo-box" id="undoBox" data-action="undo">
+                    <div class="action-label">Undo</div>
+                    <div class="action-content" id="undoContent">
+                        <span class="undo-icon">↶</span>
+                        <span>UNDO</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Section - Results -->
+        <div class="bottom-section">
+            <div class="results-container">
+                <div class="results-header">Available Tracks</div>
+                <div id="resultsList">
+                    <div class="no-tracks-message">
+                        Select filters (Place, Mood, Star) to see recommendations
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Search Modal -->
+    <div class="modal" id="searchModal">
+        <div class="modal-content search-modal">
+            <h3>Search Tracks</h3>
+            <input type="text" class="search-input-modal" id="searchInput" placeholder="Type track name..." autocomplete="off">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    </div>
+
+    <!-- PLACE Modal -->
+    <div class="modal" id="placeModal">
+        <div class="modal-content">
+            <h3>Select Place</h3>
+            <div class="option-list">
+                <div class="option-item" data-value="OPEN">OPEN</div>
+                <div class="option-item" data-value="STA">STA</div>
+                <div class="option-item" data-value="MID">MID</div>
+                <div class="option-item" data-value="END">END</div>
+                <div class="option-item" data-value="CLOSE">CLOSE</div>
+                <div class="option-item" data-value="ANY">ANY</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOOD Modal -->
+    <div class="modal" id="moodModal">
+        <div class="modal-content">
+            <h3>Select Mood</h3>
+            <div class="option-list">
+                <div class="option-item" data-value="SRS">SRS</div>
+                <div class="option-item" data-value="JK">JK</div>
+                <div class="option-item" data-value="BOTH">BOTH</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAR Modal -->
+    <div class="modal" id="starModal">
+        <div class="modal-content">
+            <h3>Select Star Rating</h3>
+            <div class="option-list">
+                <div class="option-item" data-value="5">⭐⭐⭐⭐⭐ (5)</div>
+                <div class="option-item" data-value="4">⭐⭐⭐⭐ (4)</div>
+                <div class="option-item" data-value="3">⭐⭐⭐ (3)</div>
+                <div class="option-item" data-value="2">⭐⭐ (2)</div>
+                <div class="option-item" data-value="1">⭐ (1)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== APPLICATION STATE =====
+        let appState = {
+            tracks: [],
+            currentTrack: null,
+            previousTrack: null,
+            selectedPlace: null,
+            selectedMood: null,
+            selectedStar: null,
+            blockedTransitions: [],
+            playedTracks: [],
+            isInitialized: false
+        };
+
+        // ===== DEBUGGING & ERROR HANDLING =====
+        function log(message, data = null) {
+            console.log(`[DJ Mix System] ${message}`, data || '');
+        }
+
+        function handleError(error, context) {
+            log(`ERROR in ${context}:`, error);
+            showError(`Error in ${context}: ${error.message}`);
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-state';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        // ===== DATA MANAGEMENT =====
+        function loadTracks() {
+            try {
+                const savedTracks = localStorage.getItem('tracks');
+                const savedBlocked = localStorage.getItem('blockedTransitions');
+                
+                appState.tracks = savedTracks ? JSON.parse(savedTracks) : getDefaultTracks();
+                appState.blockedTransitions = savedBlocked ? JSON.parse(savedBlocked) : [];
+                
+                log('Tracks loaded successfully', appState.tracks.length);
+            } catch (error) {
+                handleError(error, 'loadTracks');
+            }
+        }
+
+        function saveTracks() {
+            try {
+                localStorage.setItem('tracks', JSON.stringify(appState.tracks));
+                localStorage.setItem('blockedTransitions', JSON.stringify(appState.blockedTransitions));
+                log('Tracks saved successfully');
+            } catch (error) {
+                handleError(error, 'saveTracks');
+            }
+        }
+
+        function getDefaultTracks() {
+            return [
+                { id: 1, title: "Summer Nights", artist: "DJ Cool", bpm: 128, mood: "JK", place: "OPEN", stars: 5 },
+                { id: 2, title: "Midnight Groove", artist: "Beat Master", bpm: 125, mood: "SRS", place: "MID", stars: 4 },
+                { id: 3, title: "Electric Dreams", artist: "Synth Wave", bpm: 130, mood: "BOTH", place: "END", stars: 5 },
+                { id: 4, title: "Club Banger", artist: "House King", bpm: 126, mood: "JK", place: "STA", stars: 4 },
+                { id: 5, title: "Deep House Journey", artist: "Soul Deep", bpm: 122, mood: "SRS", place: "CLOSE", stars: 3 },
+                { id: 6, title: "Techno Thunder", artist: "Bass Drop", bpm: 135, mood: "JK", place: "MID", stars: 5 },
+                { id: 7, title: "Ambient Flow", artist: "Chill Zone", bpm: 118, mood: "BOTH", place: "OPEN", stars: 3 },
+                { id: 8, title: "Progressive Peak", artist: "Trance Master", bpm: 132, mood: "SRS", place: "END", stars: 4 },
+                { id: 9, title: "Funky Town", artist: "Groove Lord", bpm: 120, mood: "JK", place: "STA", stars: 4 },
+                { id: 10, title: "Trance Escape", artist: "Mind Bender", bpm: 138, mood: "BOTH", place: "CLOSE", stars: 5 }
+            ];
+        }
+
+        // ===== TRACK MANAGEMENT =====
+        function selectCurrentTrack(trackId) {
+            try {
+                log('Selecting track:', trackId);
+                
+                // Prevent scrolling during track selection
+                const originalOverflow = document.body.style.overflow;
+                document.body.style.overflow = 'hidden';
+                
+                const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY;
+                
+                const newTrack = appState.tracks.find(t => t.id === trackId);
+                
+                if (newTrack) {
+                    log('Found track:', newTrack.title);
+                    // Mark current track as played when moving to a new track
+                    if (appState.currentTrack && appState.currentTrack.id !== newTrack.id) {
+                        if (!appState.playedTracks.includes(appState.currentTrack.id)) {
+                            appState.playedTracks.push(appState.currentTrack.id);
+                            log('Track marked as played:', appState.currentTrack.title);
+                        }
+                    }
+                    
+                    if (appState.currentTrack) {
+                        appState.previousTrack = appState.currentTrack;
+                        document.getElementById('undoBox').classList.add('active');
+                    }
+                    
+                    appState.currentTrack = newTrack;
+                    document.getElementById('currentObjectContent').textContent = newTrack.title;
+                    document.getElementById('currentObjectBar').classList.add('active');
+                    
+                    updateResults();
+                    saveTracks();
+                    
+                    // Restore scroll position
+                    setTimeout(() => {
+                        window.scrollTo(0, currentScrollTop);
+                        document.body.style.overflow = originalOverflow;
+                    }, 100);
+                    
+                    log('Track selection complete');
+                } else {
+                    log('Track not found:', trackId);
+                }
+            } catch (error) {
+                handleError(error, 'selectCurrentTrack');
+            }
+        }
+
+        function clearCurrentTrack() {
+            try {
+                if (appState.currentTrack) {
+                    appState.previousTrack = appState.currentTrack;
+                    appState.currentTrack = null;
+                    
+                    document.getElementById('currentObjectContent').textContent = 'Tap to search for a track...';
+                    document.getElementById('currentObjectBar').classList.remove('active');
+                    document.getElementById('undoBox').classList.add('active');
+                    
+                    updateResults();
+                }
+            } catch (error) {
+                handleError(error, 'clearCurrentTrack');
+            }
+        }
+
+        function undoTrackSelection() {
+            try {
+                if (appState.previousTrack) {
+                    appState.currentTrack = appState.previousTrack;
+                    appState.previousTrack = null;
+                    
+                    document.getElementById('currentObjectContent').textContent = appState.currentTrack.title;
+                    document.getElementById('undoBox').classList.remove('active');
+                    
+                    updateResults();
+                }
+            } catch (error) {
+                handleError(error, 'undoTrackSelection');
+            }
+        }
+
+        function sessionReset() {
+            try {
+                // Clear all selections
+                appState.currentTrack = null;
+                appState.previousTrack = null;
+                appState.selectedPlace = null;
+                appState.selectedMood = null;
+                appState.selectedStar = null;
+                
+                // Update UI
+                document.getElementById('currentObjectContent').textContent = 'Tap to search for a track...';
+                document.getElementById('currentObjectBar').classList.remove('active');
+                
+                document.getElementById('placeContent').textContent = 'Tap to select...';
+                document.getElementById('placeBar').classList.remove('active');
+                
+                document.getElementById('moodContent').textContent = 'Tap to select...';
+                document.getElementById('moodBar').classList.remove('active');
+                
+                document.getElementById('starContent').textContent = 'Tap to select...';
+                document.getElementById('starBar').classList.remove('active');
+                
+                document.getElementById('undoBox').classList.remove('active');
+                
+                // Update results
+                updateResults();
+            } catch (error) {
+                handleError(error, 'sessionReset');
+            }
+        }
+
+        // ===== FILTER MANAGEMENT =====
+        function updateResults() {
+            try {
+                const resultsList = document.getElementById('resultsList');
+                
+                // Get available tracks based on filters
+                let availableTracks = appState.tracks.filter(track => {
+                    // Don't show current track in results
+                    if (appState.currentTrack && track.id === appState.currentTrack.id) {
+                        return false;
+                    }
+                    
+                    // Don't show played tracks
+                    if (appState.playedTracks.includes(track.id)) {
+                        return false;
+                    }
+                    
+                    // Apply filters
+                    if (appState.selectedPlace && track.place !== appState.selectedPlace) {
+                        return false;
+                    }
+                    
+                    if (appState.selectedMood && track.mood !== appState.selectedMood) {
+                        return false;
+                    }
+                    
+                    if (appState.selectedStar && track.stars !== parseInt(appState.selectedStar)) {
+                        return false;
+                    }
+                    
+                    return true;
+                });
+                
+                // Sort by blocked transitions and star rating
+                availableTracks.sort((a, b) => {
+                    // Prioritize higher star ratings
+                    if (a.stars !== b.stars) {
+                        return b.stars - a.stars;
+                    }
+                    return a.id - b.id;
+                });
+                
+                if (availableTracks.length === 0) {
+                    resultsList.innerHTML = '<div class="no-tracks-message">No tracks match your filters</div>';
+                    return;
+                }
+                
+                const trackItems = availableTracks.map(track => `
+                    <div class="track-item" data-track-id="${track.id}">
+                        <div class="track-title">${track.title}</div>
+                        <div class="track-details">
+                            <span class="track-bpm">${track.bpm} BPM</span>
+                            <span class="track-mood">${track.mood}</span>
+                        </div>
+                    </div>
+                `).join('');
+                
+                resultsList.innerHTML = trackItems;
+                log('Results updated:', availableTracks.length, 'tracks');
+            } catch (error) {
+                handleError(error, 'updateResults');
+            }
+        }
+
+        // ===== UI INTERACTIONS =====
+        function handleBarClick(action) {
+            try {
+                switch (action) {
+                    case 'search':
+                        openSearchModal();
+                        break;
+                    case 'place':
+                        openPlaceModal();
+                        break;
+                    case 'mood':
+                        openMoodModal();
+                        break;
+                    case 'star':
+                        openStarModal();
+                        break;
+                }
+            } catch (error) {
+                handleError(error, 'handleBarClick');
+            }
+        }
+
+        function handleActionClick(action) {
+            try {
+                switch (action) {
+                    case 'reset':
+                        sessionReset();
+                        break;
+                    case 'undo':
+                        undoTrackSelection();
+                        break;
+                }
+            } catch (error) {
+                handleError(error, 'handleActionClick');
+            }
+        }
+
+        function handleOptionClick(optionElement) {
+            try {
+                const value = optionElement.dataset.value;
+                const modal = optionElement.closest('.modal');
+                
+                if (modal.id === 'searchModal') {
+                    const trackId = parseInt(value);
+                    selectCurrentTrack(trackId);
+                } else {
+                    // Update filter selection
+                    const filterType = modal.id.replace('Modal', '').toLowerCase();
+                    updateFilter(filterType, value, optionElement.textContent);
+                }
+                
+                closeAllModals();
+            } catch (error) {
+                handleError(error, 'handleOptionClick');
+            }
+        }
+
+        function updateFilter(type, value, displayText) {
+            try {
+                appState[`selected${type.charAt(0).toUpperCase() + type.slice(1)}`] = value;
+                
+                const contentElement = document.getElementById(`${type}Content`);
+                const barElement = document.getElementById(`${type}Bar`);
+                
+                contentElement.textContent = displayText || value;
+                barElement.classList.add('active');
+                
+                updateResults();
+                log(`Filter updated: ${type} = ${value}`);
+            } catch (error) {
+                handleError(error, 'updateFilter');
+            }
+        }
+
+        // ===== MODAL MANAGEMENT =====
+        function openSearchModal() {
+            try {
+                const modal = document.getElementById('searchModal');
+                const searchInput = document.getElementById('searchInput');
+                const searchResults = document.getElementById('searchResults');
+                
+                searchInput.value = '';
+                searchResults.innerHTML = '';
+                modal.classList.add('show');
+                searchInput.focus();
+                
+                log('Search modal opened');
+            } catch (error) {
+                handleError(error, 'openSearchModal');
+            }
+        }
+
+        function openPlaceModal() {
+            try {
+                document.getElementById('placeModal').classList.add('show');
+                log('Place modal opened');
+            } catch (error) {
+                handleError(error, 'openPlaceModal');
+            }
+        }
+
+        function openMoodModal() {
+            try {
+                document.getElementById('moodModal').classList.add('show');
+                log('Mood modal opened');
+            } catch (error) {
+                handleError(error, 'openMoodModal');
+            }
+        }
+
+        function openStarModal() {
+            try {
+                document.getElementById('starModal').classList.add('show');
+                log('Star modal opened');
+            } catch (error) {
+                handleError(error, 'openStarModal');
+            }
+        }
+
+        function closeAllModals() {
+            try {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('show');
+                });
+                log('All modals closed');
+            } catch (error) {
+                handleError(error, 'closeAllModals');
+            }
+        }
+
+        function dismissInstallPrompt() {
+            try {
+                document.getElementById('pwaInstallPrompt').classList.remove('show');
+                localStorage.setItem('installPromptDismissed', Date.now().toString());
+                log('Install prompt dismissed');
+            } catch (error) {
+                handleError(error, 'dismissInstallPrompt');
+            }
+        }
+
+        // ===== SEARCH FUNCTIONALITY =====
+        function filterSearchResults(query) {
+            try {
+                const searchResults = document.getElementById('searchResults');
+                
+                if (!query.trim()) {
+                    searchResults.innerHTML = '';
+                    return;
+                }
+                
+                const filteredTracks = appState.tracks.filter(track => 
+                    track.title.toLowerCase().includes(query.toLowerCase()) ||
+                    track.artist.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                if (filteredTracks.length === 0) {
+                    searchResults.innerHTML = '<div class="no-tracks-message">No tracks found</div>';
+                    return;
+                }
+                
+                const resultItems = filteredTracks.map(track => `
+                    <div class="option-item" data-track-id="${track.id}" data-value="${track.id}">
+                        <div style="font-weight: bold;">${track.title}</div>
+                        <div style="font-size: 12px; opacity: 0.7;">${track.artist} • ${track.bpm} BPM</div>
+                    </div>
+                `).join('');
+                
+                searchResults.innerHTML = resultItems;
+                log('Search results updated:', filteredTracks.length, 'tracks');
+            } catch (error) {
+                handleError(error, 'filterSearchResults');
+            }
+        }
+
+        // ===== EVENT LISTENERS =====
+        function initializeEventListeners() {
+            try {
+                // Global click handler
+                document.addEventListener('click', handleGlobalClick);
+                document.addEventListener('touchstart', handleGlobalTouch, { passive: false });
+                
+                // Keyboard events
+                document.addEventListener('keydown', handleKeyDown);
+                
+                // Search input events
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.addEventListener('input', function() {
+                        filterSearchResults(this.value);
+                    });
+                }
+                
+                log('Event listeners initialized');
+            } catch (error) {
+                handleError(error, 'initializeEventListeners');
+            }
+        }
+
+        function handleGlobalClick(event) {
+            try {
+                const target = event.target;
+                
+                // Handle filter bar clicks
+                if (target.closest('.filter-bar')) {
+                    const bar = target.closest('.filter-bar');
+                    const action = bar.dataset.action;
+                    handleBarClick(action);
+                    return;
+                }
+                
+                // Handle action box clicks
+                if (target.closest('.action-box')) {
+                    const box = target.closest('.action-box');
+                    const action = box.dataset.action;
+                    handleActionClick(action);
+                    return;
+                }
+                
+                // Handle modal option clicks
+                if (target.closest('.option-item')) {
+                    const option = target.closest('.option-item');
+                    handleOptionClick(option);
+                    return;
+                }
+                
+                // Handle track item clicks
+                if (target.closest('.track-item')) {
+                    const trackItem = target.closest('.track-item');
+                    const trackId = parseInt(trackItem.dataset.trackId);
+                    log('Track item clicked:', trackId);
+                    selectCurrentTrack(trackId);
+                    return;
+                }
+                
+                // Handle modal background clicks
+                if (target.classList.contains('modal')) {
+                    closeAllModals();
+                    return;
+                }
+            } catch (error) {
+                handleError(error, 'handleGlobalClick');
+            }
+        }
+
+        function handleGlobalTouch(event) {
+            try {
+                const target = event.target;
+                
+                // Prevent zoom on double tap
+                if (target.closest('.filter-bar') || target.closest('.action-box') || target.closest('.option-item') || target.closest('.track-item')) {
+                    event.preventDefault();
+                    handleGlobalClick(event);
+                }
+            } catch (error) {
+                handleError(error, 'handleGlobalTouch');
+            }
+        }
+
+        function handleKeyDown(event) {
+            try {
+                // Escape key closes modals
+                if (event.key === 'Escape') {
+                    closeAllModals();
+                    return;
+                }
+                
+                // Enter key in search input
+                if (event.key === 'Enter' && document.activeElement.id === 'searchInput') {
+                    const firstResult = document.querySelector('.search-results .option-item');
+                    if (firstResult) {
+                        const trackId = parseInt(firstResult.dataset.trackId);
+                        selectCurrentTrack(trackId);
+                        closeAllModals();
+                    }
+                }
+            } catch (error) {
+                handleError(error, 'handleKeyDown');
+            }
+        }
+
+        // ===== PWA FUNCTIONALITY =====
+        let installPrompt = null;
+        let installPromptShown = false;
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            installPrompt = event;
+            
+            const dismissedTime = localStorage.getItem('installPromptDismissed');
+            if (dismissedTime) {
+                const hoursSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60);
+                if (hoursSinceDismissed < 24) {
+                    return; // Don't show again
+                }
+            }
+            
+            if (!installPromptShown) {
+                setTimeout(() => {
+                    document.getElementById('pwaInstallPrompt').classList.add('show');
+                    installPromptShown = true;
+                }, 2000);
+            }
+        });
+
+        function installPWA() {
+            if (installPrompt) {
+                installPrompt.prompt();
+                installPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        log('User accepted PWA install');
+                    } else {
+                        log('User dismissed PWA install');
+                    }
+                    installPrompt = null;
+                });
+            }
+            document.getElementById('pwaInstallPrompt').classList.remove('show');
+        }
+
+        // ===== INITIALIZATION =====
+        function initializeApp() {
+            try {
+                log('🎵 DJ Mix System - PROFESSIONAL EDITION 🎵');
+                log('Initializing complete PWA feature set...');
+                
+                // Load data
+                loadTracks();
+                
+                // Setup event listeners
+                initializeEventListeners();
+                
+                // Initial UI update
+                updateResults();
+                
+                appState.isInitialized = true;
+                log('✅ DJ Mix PWA fully initialized!');
+                log('Features loaded: PWA support, Offline mode, Enhanced iOS integration');
+                
+            } catch (error) {
+                handleError(error, 'initializeApp');
+                showError('❌ Failed to initialize the application. Please refresh the page.');
+            }
+        }
+
+        // Start the application
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        // Fallback initialization in case DOMContentLoaded doesn't fire
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(initializeApp, 100);
+        }
+    </script>
+</body>
+</html>
