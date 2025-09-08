@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DJ Mix Pro">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Advanced DJ track mixing and recommendation system for mobile DJs">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231a1a2e'/%3E%3Ccircle cx='50' cy='50' r='35' fill='none' stroke='%2300d4ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='35' r='8' fill='%2300d4ff'/%3E%3Cpath d='M35 65 Q50 55 65 65' stroke='%2300d4ff' stroke-width='3' fill='none'/%3E%3Ctext x='50' y='80' text-anchor='middle' fill='%23ffffff' font-family='Arial' font-size='10'%3EDJ%3C/text%3E%3C/svg%3E">
+    
+    <title>DJ Mix System - Mobile Edition</title>
+    <style>
+        /* ===== RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Mobile viewport fixes for Safari */
+        body {
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height for mobile */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        /* Safe area for iOS devices */
+        @supports (padding: max(0px)) {
+            body {
+                padding-top: max(0px, env(safe-area-inset-top));
+                padding-bottom: max(0px, env(safe-area-inset-bottom));
+            }
+        }
+        
+        /* ===== MAIN CONTAINER ===== */
+        .app-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* ===== FILTER BARS ===== */
+        .filter-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            -webkit-user-select: none;
+            user-select: none;
+            margin: 0 15px;
+        }
+        
+        .filter-bar:first-child {
+            margin-top: 15px;
+        }
+        
+        .filter-bar:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .filter-bar.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+        
+        .bar-label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .bar-content {
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* ===== ACTION CONTAINER ===== */
+        .action-container {
+            display: flex;
+            gap: 10px;
+            margin: 0 15px;
+        }
+        
+        .action-bar {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .action-bar:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .reset-bar {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.4);
+        }
+        
+        .reset-bar:hover {
+            background: rgba(255, 107, 107, 0.3);
+        }
+        
+        .reset-bar.active {
+            background: rgba(255, 107, 107, 0.4);
+            border-color: #ff6b6b;
+        }
+        
+        .undo-bar {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.4);
+        }
+        
+        .undo-bar:hover {
+            background: rgba(0, 212, 255, 0.3);
+        }
+        
+        .undo-bar.active {
+            background: rgba(0, 212, 255, 0.4);
+            border-color: #00d4ff;
+        }
+        
+        .action-content {
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: auto;
+        }
+        
+        .action-icon {
+            font-size: 16px;
+        }
+        
+        /* ===== RESULTS CONTAINER ===== */
+        .results-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+            margin: 0 15px 15px 15px;
+            padding: 20px;
+            box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .results-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+        
+        /* ===== TRACK ITEMS ===== */
+        .track-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            position: relative;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .track-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .track-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .track-item.touch-active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .track-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #00d4ff;
+        }
+        
+        .track-details {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* ===== MODALS ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 15px;
+            padding: 30px;
+            min-width: 300px;
+            max-width: 90vw;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: scale(0.9);
+            transition: transform 0.2s;
+        }
+        
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-align: center;
+        }
+        
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .option-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 16px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .option-item:hover {
+            background: rgba(0, 212, 255, 0.3);
+            color: white;
+        }
+        
+        /* ===== SCROLLBARS ===== */
+        .results-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .results-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .results-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.5);
+            border-radius: 3px;
+        }
+        
+        /* ===== MESSAGES ===== */
+        .no-tracks-message {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 40px;
+            font-size: 16px;
+        }
+        
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .filter-bar, .action-container {
+                margin: 0 10px;
+            }
+            
+            .filter-bar:first-child {
+                margin-top: 10px;
+            }
+            
+            .results-container {
+                margin: 0 10px 10px 10px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Current Track Filter -->
+        <div class="filter-bar active" id="currentTrackBar" data-action="search">
+            <div>
+                <div class="bar-label">Current Track</div>
+                <div class="bar-content" id="currentTrackContent">Tap to search for a track...</div>
+            </div>
+        </div>
+        
+        <!-- Place Filter -->
+        <div class="filter-bar" id="placeBar" data-action="place">
+            <div>
+                <div class="bar-label">Place</div>
+                <div class="bar-content" id="placeContent">Tap to select...</div>
+            </div>
+        </div>
+        
+        <!-- Mood Filter -->
+        <div class="filter-bar" id="moodBar" data-action="mood">
+            <div>
+                <div class="bar-label">Mood</div>
+                <div class="bar-content" id="moodContent">Tap to select...</div>
+            </div>
+        </div>
+        
+        <!-- Star Rating Filter -->
+        <div class="filter-bar" id="starBar" data-action="star">
+            <div>
+                <div class="bar-label">Star Rating</div>
+                <div class="bar-content" id="starContent">Tap to select...</div>
+            </div>
+        </div>
+        
+        <!-- Horizontal Action Container -->
+        <div class="action-container">
+            <!-- Reset Action -->
+            <div class="action-bar reset-bar" id="resetBar" data-action="reset">
+                <div>
+                    <div class="bar-label">Reset</div>
+                    <div class="action-content">
+                        <span class="action-icon">🔄</span>
+                        <span>RESET</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Undo Action -->
+            <div class="action-bar undo-bar" id="undoBar" data-action="undo">
+                <div>
+                    <div class="bar-label">Undo</div>
+                    <div class="action-content">
+                        <span class="action-icon">↶</span>
+                        <span>UNDO</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="results-container">
+            <div class="results-header">Available Tracks</div>
+            <div id="resultsList">
+                <div class="no-tracks-message">
+                    Select filters (Place, Mood, Star) to see recommendations
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Search Modal -->
+    <div class="modal" id="searchModal">
+        <div class="modal-content">
+            <h3>Search Tracks</h3>
+            <input type="text" id="searchInput" placeholder="Type track name..." style="
+                width: 100%;
+                padding: 15px;
+                border: none;
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.9);
+                color: #333;
+                font-size: 16px;
+                margin-bottom: 20px;
+                outline: none;
+            " autocomplete="off">
+            <div id="searchResults"></div>
+        </div>
+    </div>
+
+    <!-- Place Modal -->
+    <div class="modal" id="placeModal">
+        <div class="modal-content">
+            <h3>Select Place</h3>
+            <div class="option-list">
+                <div class="option-item" data-value="OPEN">OPEN</div>
+                <div class="option-item" data-value="STA">STA</div>
+                <div class="option-item" data-value="MID">MID</div>
+                <div class="option-item" data-value="END">END</div>
+                <div class="option-item" data-value="CLOSE">CLOSE</div>
+                <!-- REMOVED: <div class="option-item" data-value="ANY">ANY</div> -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Mood Modal -->
+    <div class="modal" id="moodModal">
+        <div class="modal-content">
+            <h3>Select Mood</h3>
+            <div class="option-list">
+                <div class="option-item" data-value="SRS">SRS</div>
+                <div class="option-item" data-value="JK">JK</div>
+                <div class="option-item" data-value="BOTH">BOTH</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Star Modal -->
+    <div class="modal" id="starModal">
+        <div class="modal-content">
+            <h3>Select Star Rating</h3>
+            <div class="option-list">
+                <div class="option-item" data-value="5">⭐⭐⭐⭐⭐ (5)</div>
+                <div class="option-item" data-value="4">⭐⭐⭐⭐ (4)</div>
+                <div class="option-item" data-value="3">⭐⭐⭐ (3)</div>
+                <div class="option-item" data-value="2">⭐⭐ (2)</div>
+                <div class="option-item" data-value="1">⭐ (1)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== APPLICATION STATE =====
+        let appState = {
+            tracks: [],
+            currentTrack: null,
+            previousTrack: null,
+            selectedPlace: null,
+            selectedMood: null,
+            selectedStar: null,
+            blockedTransitions: [],
+            playedTracks: [],
+            isInitialized: false
+        };
+
+        // ===== TOUCH TRACKING =====
+        let touchStartTime = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isScrolling = false;
+        let activeTrackItem = null;
+        let touchMoved = false;
+
+        // ===== DEBUGGING =====
+        function log(message, data = null) {
+            console.log(`[DJ Mix] ${message}`, data || '');
+        }
+
+        // ===== DATA MANAGEMENT =====
+        function getDefaultTracks() {
+            return [
+                { id: 1, title: "Opening Anthem", bpm: "128-135", key: "9A", toneless: "-", place: ["OPEN", "STA"], mood: ["SRS"], star: 3, fav: true },
+                { id: 2, title: "Deep House Groove", bpm: "120-130", key: "8A", toneless: "-", place: ["ANY"], mood: ["SRS"], star: 4, fav: false },
+                { id: 3, title: "Techno Blast", bpm: "135-145", key: "10A", toneless: "-", place: ["MID", "END"], mood: ["JK"], star: 2, fav: false },
+                { id: 4, title: "Melodic Journey", bpm: "125-135", key: "9B", toneless: "-", place: ["ANY", "CLOSE"], mood: ["SRS"], star: 1, fav: false },
+                { id: 5, title: "Club Banger", bpm: "135-145", key: "9A", toneless: "-", place: ["ANY"], mood: ["JK"], star: 2, fav: false },
+                { id: 6, title: "Ambient Chill", bpm: "110-125", key: "7A", toneless: "-", place: ["MID", "END", "CLOSE"], mood: ["SRS"], star: 3, fav: false },
+                { id: 7, title: "Toneless Intro Track", bpm: "130-140", key: "9A", toneless: "T", place: ["STA", "MID", "OPEN"], mood: ["JK"], star: 4, fav: true },
+                { id: 8, title: "Closing Track", bpm: "125-140", key: "11B", toneless: "-", place: ["END", "CLOSE"], mood: ["SRS"], star: 1, fav: false },
+                { id: 9, title: "Versatile Groove", bpm: "120-135", key: "8B", toneless: "O", place: ["STA", "ANY", "END"], mood: ["JK"], star: 3, fav: false },
+                { id: 10, title: "Perfect Opener", bpm: "130-140", key: "10A", toneless: "-", place: ["OPEN"], mood: ["JK"], star: 5, fav: true }
+            ];
+        }
+
+        // ===== NATURAL TOUCH HANDLING =====
+        function handleTouchStart(event) {
+            const target = event.target;
+            
+            if (target.closest('.track-item')) {
+                const trackItem = target.closest('.track-item');
+                touchStartTime = Date.now();
+                touchStartX = event.touches[0].clientX;
+                touchStartY = event.touches[0].clientY;
+                touchMoved = false;
+                activeTrackItem = trackItem;
+                
+                // Add visual feedback
+                trackItem.classList.add('touch-active');
+                
+                // *** KEY CHANGE: Allow natural scrolling ***
+                // Removed event.preventDefault() to allow scrolling
+            }
+        }
+
+        function handleTouchMove(event) {
+            if (!activeTrackItem) return;
+            
+            const currentX = event.touches[0].clientX;
+            const currentY = event.touches[0].clientY;
+            const deltaX = Math.abs(currentX - touchStartX);
+            const deltaY = Math.abs(currentY - touchStartY);
+            
+            // Track if finger has moved significantly
+            if (deltaX > 5 || deltaY > 5) {
+                touchMoved = true;
+            }
+            
+            // *** KEY CHANGE: Allow scrolling to happen naturally ***
+            // No longer preventing scroll behavior
+        }
+
+        function handleTouchEnd(event) {
+            if (!activeTrackItem) return;
+            
+            const touchEndTime = Date.now();
+            const touchDuration = touchEndTime - touchStartTime;
+            
+            // Only select if it's a quick tap (under 300ms) with minimal movement
+            if (!touchMoved && touchDuration < 300) {
+                const trackId = parseInt(activeTrackItem.dataset.trackId);
+                selectCurrentTrack(trackId);
+            }
+            
+            // Clean up
+            activeTrackItem.classList.remove('touch-active');
+            activeTrackItem = null;
+            touchMoved = false;
+        }
+
+        // ===== EVENT HANDLING =====
+        function initializeEventListeners() {
+            // Regular click events for non-touch interactions
+            document.addEventListener('click', handleGlobalClick);
+            
+            // Natural touch events for mobile scrolling
+            document.addEventListener('touchstart', handleTouchStart, { passive: true });
+            document.addEventListener('touchmove', handleTouchMove, { passive: true });
+            document.addEventListener('touchend', handleTouchEnd, { passive: true });
+            
+            // Keyboard events
+            document.addEventListener('keydown', handleKeyDown);
+            
+            log('Event listeners initialized with natural scrolling');
+        }
+
+        function handleGlobalClick(event) {
+            const target = event.target;
+            
+            // Handle filter bar clicks
+            if (target.closest('.filter-bar')) {
+                const bar = target.closest('.filter-bar');
+                const action = bar.dataset.action;
+                handleBarClick(action);
+                return;
+            }
+            
+            // Handle action bar clicks
+            if (target.closest('.action-bar')) {
+                const bar = target.closest('.action-bar');
+                const action = bar.dataset.action;
+                handleActionClick(action);
+                return;
+            }
+            
+            // Handle modal option clicks
+            if (target.closest('.option-item')) {
+                const option = target.closest('.option-item');
+                handleOptionClick(option);
+                return;
+            }
+            
+            // Handle modal background clicks
+            if (target.classList.contains('modal')) {
+                closeAllModals();
+                return;
+            }
+        }
+
+        function handleKeyDown(event) {
+            // Escape key closes modals
+            if (event.key === 'Escape') {
+                closeAllModals();
+                return;
+            }
+            
+            // Enter key in search input
+            if (event.key === 'Enter' && document.activeElement.id === 'searchInput') {
+                const firstResult = document.querySelector('#searchResults .option-item');
+                if (firstResult) {
+                    const trackId = parseInt(firstResult.dataset.trackId);
+                    selectCurrentTrack(trackId);
+                    closeAllModals();
+                }
+            }
+        }
+
+        // ===== UI INTERACTIONS =====
+        function handleBarClick(action) {
+            switch (action) {
+                case 'search':
+                    openSearchModal();
+                    break;
+                case 'place':
+                    openModal('placeModal');
+                    break;
+                case 'mood':
+                    openModal('moodModal');
+                    break;
+                case 'star':
+                    openModal('starModal');
+                    break;
+            }
+        }
+
+        function handleActionClick(action) {
+            switch (action) {
+                case 'reset':
+                    sessionReset();
+                    break;
+                case 'undo':
+                    undoTrackSelection();
+                    break;
+            }
+        }
+
+        function handleOptionClick(option) {
+            const modal = option.closest('.modal');
+            const value = option.dataset.value;
+            
+            if (modal.id === 'searchModal') {
+                if (option.dataset.action === 'remove') {
+                    clearCurrentTrack();
+                } else {
+                    const trackId = parseInt(option.dataset.trackId);
+                    selectCurrentTrack(trackId);
+                }
+            } else if (modal.id === 'placeModal') {
+                appState.selectedPlace = value;
+                updateBarDisplay('placeBar', 'placeContent', value);
+                appState.selectedPlace && document.getElementById('placeBar').classList.add('active');
+            } else if (modal.id === 'moodModal') {
+                appState.selectedMood = value;
+                updateBarDisplay('moodBar', 'moodContent', value);
+                appState.selectedMood && document.getElementById('moodBar').classList.add('active');
+            } else if (modal.id === 'starModal') {
+                appState.selectedStar = parseInt(value);
+                updateBarDisplay('starBar', 'starContent', value + ' ⭐');
+                appState.selectedStar && document.getElementById('starBar').classList.add('active');
+            }
+            
+            closeAllModals();
+            updateResults();
+        }
+
+        function updateBarDisplay(barId, contentId, value) {
+            const contentElement = document.getElementById(contentId);
+            if (contentElement) {
+                contentElement.textContent = value;
+            }
+        }
+
+        // ===== MODAL MANAGEMENT =====
+        function openSearchModal() {
+            const modal = document.getElementById('searchModal');
+            const input = document.getElementById('searchInput');
+            
+            input.value = '';
+            filterSearchResults('');
+            modal.classList.add('show');
+            
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('show');
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('show');
+            });
+        }
+
+        // ===== TRACK MANAGEMENT =====
+        function selectCurrentTrack(trackId) {
+            const newTrack = appState.tracks.find(t => t.id === trackId);
+            
+            if (newTrack) {
+                if (appState.currentTrack) {
+                    appState.previousTrack = appState.currentTrack;
+                    document.getElementById('undoBar').classList.add('active');
+                }
+                
+                appState.currentTrack = newTrack;
+                document.getElementById('currentTrackContent').textContent = newTrack.title;
+                document.getElementById('currentTrackBar').classList.add('active');
+                
+                updateResults();
+                log('Track selected:', newTrack.title);
+            }
+        }
+
+        function clearCurrentTrack() {
+            if (appState.currentTrack) {
+                appState.previousTrack = appState.currentTrack;
+                appState.currentTrack = null;
+                
+                document.getElementById('currentTrackContent').textContent = 'Tap to search for a track...';
+                document.getElementById('currentTrackBar').classList.remove('active');
+                document.getElementById('undoBar').classList.add('active');
+                
+                updateResults();
+            }
+        }
+
+        function undoTrackSelection() {
+            if (appState.previousTrack) {
+                appState.currentTrack = appState.previousTrack;
+                appState.previousTrack = null;
+                
+                document.getElementById('currentTrackContent').textContent = appState.currentTrack.title;
+                document.getElementById('undoBar').classList.remove('active');
+                
+                updateResults();
+            }
+        }
+
+        function sessionReset() {
+            appState.currentTrack = null;
+            appState.previousTrack = null;
+            appState.selectedPlace = null;
+            appState.selectedMood = null;
+            appState.selectedStar = null;
+            
+            document.getElementById('currentTrackContent').textContent = 'Tap to search for a track...';
+            document.getElementById('currentTrackBar').classList.remove('active');
+            
+            document.getElementById('placeContent').textContent = 'Tap to select...';
+            document.getElementById('placeBar').classList.remove('active');
+            
+            document.getElementById('moodContent').textContent = 'Tap to select...';
+            document.getElementById('moodBar').classList.remove('active');
+            
+            document.getElementById('starContent').textContent = 'Tap to select...';
+            document.getElementById('starBar').classList.remove('active');
+            
+            document.getElementById('undoBar').classList.remove('active');
+            
+            updateResults();
+            log('Session reset');
+        }
+
+        // ===== SEARCH FUNCTIONALITY =====
+        function filterSearchResults(query) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            let html = '';
+            
+            // Add REMOVE option if there's a current track
+            if (appState.currentTrack) {
+                html += `
+                    <div class="option-item" data-action="remove">
+                        <strong>REMOVE</strong> - Clear current track selection
+                    </div>
+                `;
+            }
+            
+            if (query.length === 0) {
+                html += '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">Type to search tracks...</div>';
+                resultsDiv.innerHTML = html;
+                return;
+            }
+            
+            const filtered = appState.tracks.filter(track => 
+                track.title.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (filtered.length === 0) {
+                html += '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">No tracks found</div>';
+                resultsDiv.innerHTML = html;
+                return;
+            }
+            
+            html += filtered.map(track => `
+                <div class="option-item" data-track-id="${track.id}">
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold; color: #00d4ff;">${track.title}</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">
+                            BPM: ${track.bpm} | Key: ${track.key}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // ===== RESULTS MANAGEMENT =====
+        function updateResults() {
+            const resultsList = document.getElementById('resultsList');
+            
+            if (!appState.selectedPlace || !appState.selectedMood || !appState.selectedStar) {
+                resultsList.innerHTML = '<div class="no-tracks-message">Select filters (Place, Mood, Star) to see recommendations</div>';
+                return;
+            }
+            
+            const recommendations = filterTracks();
+            
+            if (recommendations.length === 0) {
+                resultsList.innerHTML = '<div class="no-tracks-message">No tracks match your criteria</div>';
+                return;
+            }
+            
+            resultsList.innerHTML = recommendations.map(track => `
+                <div class="track-item" data-track-id="${track.id}">
+                    <div class="track-title">${track.title}${track.fav ? ' ⭐' : ''}</div>
+                    <div class="track-details">
+                        <span>BPM: ${track.bpm} | Key: ${track.key}${track.toneless !== '-' ? ` (${track.toneless})` : ''}</span>
+                        <span>MOOD: ${track.mood.join(', ')}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== TRACK FILTERING =====
+        function filterTracks() {
+            return appState.tracks.filter(track => {
+                // Don't recommend the currently playing track
+                if (appState.currentTrack && track.id === appState.currentTrack.id) return false;
+                
+                // PLACE match
+                if (!track.place.includes(appState.selectedPlace)) return false;
+                
+                // MOOD match
+                if (!track.mood.includes(appState.selectedMood) && appState.selectedMood !== 'BOTH') return false;
+                
+                // STAR rating
+                if (track.star < appState.selectedStar) return false;
+                
+                return true;
+            });
+        }
+
+        // ===== SEARCH INPUT HANDLING =====
+        function initializeSearchInput() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    filterSearchResults(this.value);
+                });
+            }
+        }
+
+        // ===== INITIALIZATION =====
+        function initializeApp() {
+            log('🎵 DJ Mix System - Natural Scrolling Edition 🎵');
+            
+            appState.tracks = getDefaultTracks();
+            
+            initializeEventListeners();
+            initializeSearchInput();
+            
+            updateResults();
+            
+            appState.isInitialized = true;
+            log('✅ DJ Mix Mobile initialized with natural scrolling');
+        }
+
+        // Start the application
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        // Fallback initialization
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(initializeApp, 100);
+        }
+    </script>
+</body>
+</html>
