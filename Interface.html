@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DJ Mix Pro">
+    <meta name="theme-color" content="#00d4ff">
+    <meta name="description" content="Advanced DJ track mixing and recommendation system for mobile DJs">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231a1a2e'/%3E%3Ccircle cx='50' cy='50' r='35' fill='none' stroke='%2300d4ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='35' r='8' fill='%2300d4ff'/%3E%3Cpath d='M35 65 Q50 55 65 65' stroke='%2300d4ff' stroke-width='3' fill='none'/%3E%3Ctext x='50' y='80' text-anchor='middle' fill='%23ffffff' font-family='Arial' font-size='10'%3EDJ%3C/text%3E%3C/svg%3E">
+    
+    <title>DJ Mix System - Mobile Edition</title>
+    <style>
+        /* ===== RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Mobile viewport fixes for Safari */
+        body {
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height for mobile */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        /* Safe area for iOS devices */
+        @supports (padding: max(0px)) {
+            body {
+                padding-top: max(0px, env(safe-area-inset-top));
+                padding-bottom: max(0px, env(safe-area-inset-bottom));
+            }
+        }
+        
+        /* ===== MAIN CONTAINER ===== */
+        .app-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* ===== FILTER BARS ===== */
+        .filter-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            -webkit-user-select: none;
+            user-select: none;
+            margin: 0 15px;
+        }
+        
+        .filter-bar:first-child {
+            margin-top: 15px;
+        }
+        
+        .filter-bar:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .filter-bar.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+        
+        .bar-label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .bar-content {
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* ===== ACTION ROW ===== */
+        .action-row {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 0 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-button {
+            flex: 1;
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.4);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .action-button:hover {
+            background: rgba(255, 107, 107, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .action-button.undo {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.4);
+        }
+        
+        .action-button.undo:hover {
+            background: rgba(0, 212, 255, 0.3);
+        }
+        
+        .action-button.undo.active {
+            background: rgba(0, 212, 255, 0.4);
+            border-color: #00d4ff;
+        }
+        
+        /* ===== RESULTS CONTAINER ===== */
+        .results-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+            margin: 15px;
+            padding: 20px;
+            box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .results-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+        
+        /* ===== TRACK ITEMS ===== */
+        .track-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .track-item.fav {
+            background: rgba(255, 255, 0, 0.2); /* Yellow background for FAV */
+            border-color: rgba(255, 255, 0, 0.4); /* Yellow border for FAV */
+        }
+        
+        .track-item.odd {
+            background: rgba(0, 255, 0, 0.2); /* Green background for ODD */
+            border-color: rgba(0, 255, 0, 0.4); /* Green border for ODD */
+        }
+        
+        .track-item.fav.odd { /* If both, keep yellow (FAV priority) */
+            background: rgba(255, 255, 0, 0.2);
+            border-color: rgba(255, 255, 0, 0.4);
+        }
+
+        .track-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .track-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .track-item.touch-active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .track-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #00d4ff;
+        }
+        
+        .track-details {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* ===== MODALS ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 15px;
+            padding: 30px;
+            min-width: 300px;
+            max-width: 90vw;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: scale(0.9);
+            transition: transform 0.2s;
+        }
+        
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-align: center;
+        }
+        
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .option-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 16px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .option-item:hover {
+            background: rgba(0, 212, 255, 0.3);
+            color: white;
+        }
+        
+        /* ===== CONFIRMATION MODAL ===== */
+        .confirm-modal .modal-content {
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .confirm-message {
+            margin-bottom: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .confirm-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .confirm-btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .confirm-btn.cancel {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .confirm-btn.cancel:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .confirm-btn.confirm {
+            background: rgba(255, 107, 107, 0.8);
+            color: white;
+        }
+        
+        .confirm-btn.confirm:hover {
+            background: rgba(255, 107, 107, 0.9);
+        }
+        
+        /* ===== SCROLLBARS ===== */
+        .results-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .results-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .results-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.5);
+            border-radius: 3px;
+        }
+        
+        /* ===== MESSAGES ===== */
+        .no-tracks-message {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 40px;
+            font-size: 16px;
+        }
+        
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .filter-bar, .action-row {
+                margin: 0 10px;
+            }
+            
+            .filter-bar:first-child {
+                margin-top: 10px;
+            }
+            
+            .results-container {
+                margin: 10px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Current Track Filter -->
+        <div class="filter-bar active" id="currentTrackBar" data-action="search">
+            <div>
+                <div class="bar-label">Current Track</div>
+                <div class="bar-content" id="currentTrackContent">Tap to search for a track...</div>
+            </div>
+        </div>
+        
+        <!-- Place Filter -->
+        <div class="filter-bar" id="placeBar" data-action="place">
+            <div>
+                <div class="bar-label">Place</div>
+                <div class="bar-content" id="placeContent">Tap to select...</div>
+            </div>
+        </div>
+        
+        <!-- Mood Filter -->
+        <div class="filter-bar" id="moodBar" data-action="mood">
+            <div>
+                <div class="bar-label">Mood</div>
+                <div class="bar-content" id="moodContent">Tap to select...</div>
+            </div>
+        </div>
+        
+        <!-- Star Rating Filter -->
+        <div class="filter-bar" id="starBar" data-action="star">
+            <div>
+                <div class="bar-label">Star Rating</div>
+                <div class="bar-content" id="starContent">Tap to select...</div>
+            </div>
+        </div>
+        
+        <!-- Action Row -->
+        <div class="action-row">
+            <button class="action-button" id="resetBtn" data-action="reset">
+                <span>🔄</span>
+                <span>RESET</span>
+            </button>
+            <button class="action-button undo" id="undoBtn" data-action="undo">
+                <span>↶</span>
+                <span>UNDO</span>
+            </button>
+            <button class="action-button search" id="searchBtn" data-action="search">
+                <span>🔍</span>
+                <span>SEARCH</span>
+            </button>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="results-container">
+            <div class="results-header">Available Tracks</div>
+            <div id="resultsList">
+                <div class="no-tracks-message">
+                    Select filters (Place, Mood, Star) and click SEARCH to see recommendations
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Search Modal -->
+    <div class="modal" id="searchModal">
+        <div class="modal-content">
+            <h3>Search Tracks</h3>
+            <input type="text" id="searchInput" placeholder="Type track name..." style="
+                width: 100%;
+                padding: 15px;
+                border: none;
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.9);
+                color: #333;
+                font-size: 16px;
+                margin-bottom: 20px;
+                outline: none;
+            " autocomplete="off">
+            <div id="searchResults"></div>
+        </div>
+    </div>
+
+    <!-- Place Modal -->
+    <div class="modal" id="placeModal">
+        <div class="modal-content">
+            <h3>Select Place</h3>
+            <div class="option-list">
+                <div class="option-item" data-value="OPEN">OPEN</div>
+                <div class="option-item" data-value="STA">STA</div>
+                <div class="option-item" data-value="MID">MID</div>
+                <div class="option-item" data-value="END">END</div>
+                <div class="option-item" data-value="CLOSE">CLOSE</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mood Modal -->
+    <div class="modal" id="moodModal">
+        <div class="modal-content">
+            <h3>Select Mood</h3>
+            <div class="option-list">
+                <!-- Mood options will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Star Modal -->
+    <div class="modal" id="starModal">
+        <div class="modal-content">
+            <h3>Select Star Rating</h3>
+            <div class="option-list">
+                <div class="option-item" data-value="5">⭐⭐⭐⭐⭐ (5)</div>
+                <div class="option-item" data-value="4">⭐⭐⭐⭐ (4+)</div>
+                <div class="option-item" data-value="3">⭐⭐⭐ (3+)</div>
+                <div class="option-item" data-value="2">⭐⭐ (2+)</div>
+                <div class="option-item" data-value="1">⭐ (1+)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div class="modal confirm-modal" id="confirmModal">
+        <div class="modal-content">
+            <h3>Reset Session?</h3>
+            <div class="confirm-message">
+                This will clear your current track selection and reset all filters.<br>
+                Played tracks will be available again.
+            </div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button class="confirm-btn confirm" onclick="confirmReset()">Yes, Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== APPLICATION STATE =====
+        let appState = {
+            tracks: [],
+            currentTrack: null,
+            previousTrack: null,
+            selectedPlace: null,
+            selectedMood: null,
+            selectedStar: null,
+            playedTracks: [], // Tracks that have been played (selected and then another chosen)
+            isInitialized: false
+        };
+
+        // ===== TOUCH TRACKING =====
+        let touchStartTime = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isScrolling = false;
+        let activeTrackItem = null;
+        let touchMoved = false;
+
+        // ===== DEBUGGING =====
+        function log(message, data = null) {
+            console.log(`[DJ Mix] ${message}`, data || '');
+        }
+
+        // ===== DATA MANAGEMENT =====
+        async function getDefaultTracks() {
+            // All 437 tracks embedded for offline use - compact format
+            // Added "oddity: false" to tracks where it was missing to ensure consistency.
+            return [
+                {"id":1757039709290,"title":"AtNight(Peggy)","bpm":"125-130","key":"7B","toneless":"-","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757039775086,"title":"Can'tGetUOut","bpm":"126-134","key":"10B","toneless":"-","place":["MID","END","CLOSE"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757039834132,"title":"Innocuous","bpm":"125-137","key":"5B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757039918752,"title":"I'veAlwaysLiked","bpm":"125-135","key":"11B","toneless":"-","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757039985046,"title":"Sync24","bpm":"123-128","key":"5B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757040144076,"title":"TomTrack","bpm":"125-137","key":"7A","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":5,"fav":true,"oddity":false},
+                {"id":1757040258714,"title":"Can'tBelieve","bpm":"126-138","key":"5B","toneless":"-","place":["OPEN","STA","END","CLOSE"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757040374231,"title":"BoigXTu","bpm":"131-140","key":"3A","toneless":"T","place":["OPEN","STA","MID"],"mood":["COOL"],"star":5,"fav":false,"oddity":false},
+                {"id":1757040417561,"title":"Bail-E","bpm":"127-131","key":"6B","toneless":"T","place":["OPEN","STA"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757040536562,"title":"BlackRussian","bpm":"133-143","key":"2B","toneless":"-","place":["MID","END","CLOSE"],"mood":["DARK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757040582962,"title":"Bleep","bpm":"134-145","key":"4B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757040702665,"title":"Don'tFAround","bpm":"139-145","key":"9B","toneless":"-","place":["MID","END","CLOSE"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757085340286,"title":"Feelings2","bpm":"140-151","key":"11B","toneless":"T","place":["STA","MID"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087090118,"title":"FeltGangsta","bpm":"160-166","key":"1B","toneless":"T","place":["MID","END","CLOSE"],"mood":["FUN"],"star":1,"fav":false,"oddity":false},
+                {"id":1757087139951,"title":"FreakLikeU","bpm":"133-141","key":"9B","toneless":"T","place":["END","CLOSE"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087175289,"title":"FREAKBODY","bpm":"133-142","key":"7B","toneless":"T","place":["STA","MID"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087217045,"title":"GameOver","bpm":"141-149","key":"3B","toneless":"-","place":["OPEN","STA","END","CLOSE"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757087266310,"title":"Glamour","bpm":"130-138","key":"8A","toneless":"T","place":["STA","MID"],"mood":["SRS"],"star":4,"fav":false,"oddity":false},
+                {"id":1757087306649,"title":"GlintAM","bpm":"128-137","key":"1A","toneless":"-","place":["OPEN","CLOSE","ANY"],"mood":["SRS"],"star":5,"fav":false,"oddity":false},
+                {"id":1757087347459,"title":"Gritti","bpm":"128-135","key":"12B","toneless":"T","place":["ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087435079,"title":"HeMyHoe","bpm":"158-166","key":"8B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["JK"],"star":3,"fav":true,"oddity":false},
+                {"id":1757087513285,"title":"Honey(Torren)","bpm":"124-134","key":"6B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087552193,"title":"HundredFlowers","bpm":"125-134","key":"5A","toneless":"-","place":["OPEN","STA","END","CLOSE"],"mood":["FUN"],"star":5,"fav":false,"oddity":false},
+                {"id":1757087591655,"title":"ImSoGlad","bpm":"123-134","key":"3B","toneless":"-","place":["MID","END","CLOSE"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087649895,"title":"InMyMind","bpm":"139-147","key":"10B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087681615,"title":"IXP-42","bpm":"137-145","key":"9B","toneless":"-","place":["OPEN","STA"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087723963,"title":"KeepUrPussyTight","bpm":"155-161","key":"4B","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757087848639,"title":"KellyIsWithHerC","bpm":"135-141","key":"10B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757087885322,"title":"Melt(Ntel)","bpm":"136-142","key":"7B","toneless":"-","place":["OPEN","STA","MID"],"mood":["DARK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757087924931,"title":"MuschiMuschi","bpm":"150-155","key":"2B","toneless":"-","place":["ANY"],"mood":["JK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757087964275,"title":"NormalLevel","bpm":"150-156","key":"3B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757087994750,"title":"OnDaBlock","bpm":"143-150","key":"9B","toneless":"-","place":["OPEN","STA","MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757088036034,"title":"ResetIt","bpm":"129-138","key":"8A","toneless":"T","place":["STA","MID"],"mood":["SRS"],"star":4,"fav":false,"oddity":false},
+                {"id":1757088061418,"title":"Skincare","bpm":"127-136","key":"2B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757088088574,"title":"SlimLine","bpm":"143-150","key":"4B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757088146969,"title":"Stratos","bpm":"147-151","key":"9B","toneless":"-","place":["MID","END","CLOSE"],"mood":["SRS"],"star":1,"fav":false,"oddity":false},
+                {"id":1757088183884,"title":"Subzero","bpm":"125-132","key":"4A","toneless":"-","place":["OPEN","STA"],"mood":["SRS"],"star":4,"fav":false,"oddity":false},
+                {"id":1757088220806,"title":"That'sRight","bpm":"139-145","key":"12B","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":1,"fav":false,"oddity":false},
+                {"id":1757088256915,"title":"Analyst","bpm":"144-150","key":"7B","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757088282119,"title":"WayYouFeel","bpm":"130-137","key":"11B","toneless":"-","place":["CLOSE","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757088309262,"title":"TooLateForU&M1","bpm":"128-143","key":"7B","toneless":"T","place":["MID","END","CLOSE"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757088337128,"title":"WentHome","bpm":"137-144","key":"8B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757088392082,"title":"WhiteMatter","bpm":"139-151","key":"7B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757088431069,"title":"WithoutYou","bpm":"150-157","key":"6B","toneless":"T","place":["MID","END","CLOSE"],"mood":["SRS"],"star":1,"fav":false,"oddity":false},
+                {"id":1757088481136,"title":"XTX3","bpm":"135-144","key":"2B","toneless":"-","place":["OPEN","STA","MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757088512142,"title":"1999(Dub)","bpm":"140-148","key":"6B","toneless":"-","place":["CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757088547080,"title":"BlackJesus","bpm":"118-127","key":"1A","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":5,"fav":false,"oddity":false},
+                {"id":1757088592222,"title":"Fuckin'Lubed","bpm":"145-155","key":"10A","toneless":"T","place":["CLOSE","ANY"],"mood":["COOL"],"star":4,"fav":false,"oddity":false},
+                {"id":1757088618322,"title":"SnapIt","bpm":"136-148","key":"2B","toneless":"T","place":["OPEN","ANY"],"mood":["JK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757088646002,"title":"AmbsElAmics","bpm":"132-142","key":"7B","toneless":"-","place":["MID","END","CLOSE"],"mood":["COOL"],"star":3,"fav":true,"oddity":false},
+                {"id":1757090677836,"title":"FUK.GOV.UK","bpm":"145-154","key":"4B","toneless":"T","place":["OPEN","STA","MID"],"mood":["JK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757359455041,"title":"EhWut","bpm":"138-147","key":"9B","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757359648925,"title":"HardBeingHot","bpm":"148-154","key":"7B","toneless":"-","place":["OPEN","ANY"],"mood":["JK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757359687034,"title":"WhatULike(Logic)","bpm":"124-136","key":"5B","toneless":"-","place":["OPEN","CLOSE"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757359723122,"title":"EnterSystem","bpm":"138-148","key":"11B","toneless":"-","place":["OPEN","STA","MID"],"mood":["SRS"],"star":2,"fav":false,"oddity":false},
+                {"id":1757359800700,"title":"Navigator","bpm":"148-154","key":"5B","toneless":"-","place":["OPEN","ANY"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757359844295,"title":"BlueMonday","bpm":"130-138","key":"10B","toneless":"-","place":["END","CLOSE"],"mood":["FUN"],"star":3,"fav":false,"oddity":true},
+                {"id":1757359873654,"title":"WiiShop","bpm":"139-145","key":"9B","toneless":"-","place":["MID","END","CLOSE"],"mood":["JK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757360832527,"title":"Don'tStop","bpm":"143-153","key":"3B","toneless":"-","place":["ANY"],"mood":["SRS"],"star":2,"fav":false,"oddity":false},
+                {"id":1757360864758,"title":"TSIP","bpm":"143-152","key":"11B","toneless":"-","place":["STA","MID"],"mood":["COOL"],"star":2,"fav":false,"oddity":false},
+                {"id":1757360892307,"title":"Sigh","bpm":"146-157","key":"4B","toneless":"-","place":["OPEN","ANY"],"mood":["SRS"],"star":2,"fav":false,"oddity":false},
+                {"id":1757360925111,"title":"Olvidar","bpm":"129-141","key":"2B","toneless":"-","place":["OPEN","CLOSE","ANY"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757361005176,"title":"ElephantDrugs","bpm":"137-144","key":"7B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757361325315,"title":"FukDis","bpm":"147-157","key":"7B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757361363401,"title":"IWantUToBeFree","bpm":"131-139","key":"10A","toneless":"-","place":["OPEN","STA"],"mood":["FUN"],"star":5,"fav":false,"oddity":false},
+                {"id":1757361404021,"title":"SoulDeep","bpm":"159-166","key":"9B","toneless":"-","place":["OPEN","STA"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757361459943,"title":"HappyHausOnly","bpm":"148-159","key":"11B","toneless":"-","place":["MID","END","CLOSE"],"mood":["FUN"],"star":1,"fav":false,"oddity":false},
+                {"id":1757361499203,"title":"LoseUInDark","bpm":"143-152","key":"9B","toneless":"-","place":["OPEN","ANY"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757361556325,"title":"LikeAPoolParty","bpm":"143-154","key":"1B","toneless":"T","place":["CLOSE","ANY"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757361608659,"title":"Operate(99)","bpm":"131-143","key":"9A","toneless":"-","place":["MID","END","CLOSE"],"mood":["FUN"],"star":4,"fav":false,"oddity":false},
+                {"id":1757361646158,"title":"Stop&Go","bpm":"147-159","key":"2B","toneless":"T","place":["STA","MID"],"mood":["JK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757361676023,"title":"MakeMeDance","bpm":"153-167","key":"8B","toneless":"T","place":["OPEN","STA","MID"],"mood":["JK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757361701987,"title":"LondonTing","bpm":"148-157","key":"9B","toneless":"-","place":["MID","END"],"mood":["SRS"],"star":2,"fav":true,"oddity":false},
+                {"id":1757366140258,"title":"ArlaFearn","bpm":"137-143","key":"6B","toneless":"-","place":["OPEN","STA","MID"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757366176319,"title":"PRESHA","bpm":"136-146","key":"9B","toneless":"T","place":["ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757366204358,"title":"IgniteDem","bpm":"138-147","key":"10B","toneless":"-","place":["STA","MID"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757366260496,"title":"Mush","bpm":"147-167","key":"11B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["JK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757366313724,"title":"Cinema","bpm":"134-137","key":"2A","toneless":"-","place":["OPEN","CLOSE","ANY"],"mood":["SRS"],"star":5,"fav":false,"oddity":false},
+                {"id":1757366340410,"title":"Everything","bpm":"139-144","key":"9B","toneless":"-","place":["MID","END","CLOSE"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757366381469,"title":"Situationship","bpm":"149-160","key":"6B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757366415714,"title":"XXX(Ikari)","bpm":"140-152","key":"6B","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757366449879,"title":"RudeBoyTokyoDrift","bpm":"145-155","key":"5B","toneless":"-","place":["STA","MID"],"mood":["JK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757366480277,"title":"MegLookGood","bpm":"143-157","key":"12B","toneless":"-","place":["MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757366548525,"title":"HoldUd,Skat!","bpm":"148-160","key":"11B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757366793962,"title":"PlayThat","bpm":"154-162","key":"8B","toneless":"T","place":["STA","MID"],"mood":["JK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757366833576,"title":"DanceFChop","bpm":"149-160","key":"3B","toneless":"T","place":["OPEN","STA","MID"],"mood":["JK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757366941805,"title":"OneDay","bpm":"132-140","key":"9A","toneless":"-","place":["OPEN","ANY"],"mood":["SRS"],"star":4,"fav":false,"oddity":false},
+                {"id":1757366979694,"title":"IAin'tGot","bpm":"140-151","key":"7B","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757367035264,"title":"EseHuevo","bpm":"149-154","key":"12B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757367073530,"title":"M3uJe1to","bpm":"143-149","key":"12B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757367119371,"title":"PassionateKisses","bpm":"143-153","key":"7B","toneless":"-","place":["OPEN","STA","MID"],"mood":["DARK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757367157892,"title":"tm(FmMix)","bpm":"154-162","key":"1B","toneless":"-","place":["STA","MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757367191992,"title":"WickedSet","bpm":"140-144","key":"7B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757367232032,"title":"WeAbsolutely","bpm":"128-135","key":"1A","toneless":"-","place":["END","CLOSE"],"mood":["SRS"],"star":5,"fav":false,"oddity":false},
+                {"id":1757367284466,"title":"MirrorMaru","bpm":"133-140","key":"7A","toneless":"-","place":["OPEN","STA"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757367324424,"title":"606Juno","bpm":"124-133","key":"8B","toneless":"-","place":["OPEN"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757367351534,"title":"InterviewE","bpm":"107-133","key":"4B","toneless":"-","place":["OPEN"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757367377710,"title":"STOOZY","bpm":"130-137","key":"2A","toneless":"-","place":["OPEN","CLOSE"],"mood":["DARK"],"star":4,"fav":false,"oddity":true},
+                {"id":1757367411662,"title":"WitnessDub","bpm":"92-97","key":"4A","toneless":"-","place":["CLOSE"],"mood":["FUN"],"star":4,"fav":false,"oddity":false},
+                {"id":1757367441348,"title":"Xtal(Aphex)","bpm":"115-123","key":"9B","toneless":"-","place":["OPEN"],"mood":["SRS"],"star":2,"fav":false,"oddity":false},
+                {"id":1757367475630,"title":"Pony","bpm":"155-163","key":"9B","toneless":"T","place":["OPEN","ANY"],"mood":["JK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757367512300,"title":"WTF(Bakar)","bpm":"120-129","key":"4A","toneless":"-","place":["OPEN"],"mood":["SRS"],"star":5,"fav":true,"oddity":true},
+                {"id":1757367539322,"title":"JeMagHet","bpm":"131-142","key":"8A","toneless":"-","place":["ANY"],"mood":["SRS"],"star":4,"fav":false,"oddity":false},
+                {"id":1757367570954,"title":"ReallyFeeling","bpm":"150-155","key":"1B","toneless":"-","place":["MID","END"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757367623762,"title":"Quartz(Client)","bpm":"147-151","key":"7B","toneless":"T","place":["MID","END","CLOSE"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757367648554,"title":"BootyBangGhetto","bpm":"146-154","key":"8B","toneless":"-","place":["MID","END","CLOSE"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757367775708,"title":"B,O,M,D","bpm":"138-152","key":"3A","toneless":"-","place":["ANY"],"mood":["FUN"],"star":4,"fav":false,"oddity":false},
+                {"id":1757367814879,"title":"StylishTantrum","bpm":"152-154","key":"12B","toneless":"T","place":["OPEN","STA","MID"],"mood":["DARK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757367846080,"title":"NaiveResp","bpm":"122-129","key":"6B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757367873661,"title":"GASH","bpm":"140-150","key":"11A","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757367950144,"title":"IfTheShoeFits","bpm":"141-146","key":"1A","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":4,"fav":false,"oddity":false},
+                {"id":1757367977178,"title":"WEINSIDE","bpm":"137-143","key":"10B","toneless":"-","place":["OPEN","ANY"],"mood":["DARK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757368005103,"title":"EndOfTheLine","bpm":"143-149","key":"6B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757368032153,"title":"Volted","bpm":"133-142","key":"2B","toneless":"-","place":["ANY"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757368062433,"title":"IWantU","bpm":"138-142","key":"6B","toneless":"-","place":["STA","MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757368111377,"title":"BrainDead","bpm":"142-151","key":"10B","toneless":"-","place":["END","CLOSE"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757368141710,"title":"Aggro","bpm":"131-142","key":"2B","toneless":"T","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757368179243,"title":"BabyBump","bpm":"143-148","key":"2B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757368225503,"title":"DreamRoutine","bpm":"134-140","key":"1B","toneless":"-","place":["OPEN","STA","END","CLOSE"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757368247930,"title":"IWannaKnow","bpm":"135-141","key":"12B","toneless":"-","place":["OPEN","STA"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757368293847,"title":"GetBusy","bpm":"145-149","key":"7B","toneless":"-","place":["CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757368320972,"title":"Vermount","bpm":"142-148","key":"7B","toneless":"-","place":["OPEN","STA","MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757368450728,"title":"EastBridge","bpm":"148-150","key":"3B","toneless":"-","place":["MID","END","CLOSE"],"mood":["FUN"],"star":1,"fav":false,"oddity":false},
+                {"id":1757368667697,"title":"TRACK8","bpm":"149-155","key":"1A","toneless":"T","place":["ANY"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757368704841,"title":"XnTheFloor","bpm":"142-143","key":"5B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757368735295,"title":"HyperBass","bpm":"155-162","key":"7B","toneless":"-","place":["CLOSE","ANY"],"mood":["FUN"],"star":1,"fav":false,"oddity":false},
+                {"id":1757368769829,"title":"Intrinsic","bpm":"158-168","key":"2B","toneless":"-","place":["CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757368811429,"title":"Morphine","bpm":"130-137","key":"9A","toneless":"T","place":["OPEN"],"mood":["DARK"],"star":5,"fav":false,"oddity":false},
+                {"id":1757368844983,"title":"MemoryIV","bpm":"138-146","key":"1B","toneless":"-","place":["OPEN"],"mood":["DARK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757368877195,"title":"IntelligenceAvec","bpm":"158-164","key":"8B","toneless":"-","place":["OPEN","CLOSE","ANY"],"mood":["JK"],"star":1,"fav":false,"oddity":false},
+                {"id":1757368927831,"title":"FLAWLESS","bpm":"155-163","key":"1B","toneless":"T","place":["OPEN","STA","MID"],"mood":["DARK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757368981064,"title":"Cxema","bpm":"135-144","key":"7B","toneless":"-","place":["MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757369017308,"title":"AllNight","bpm":"154-158","key":"9B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757369074960,"title":"sugarcoating","bpm":"162-168","key":"11B","toneless":"-","place":["STA","MID"],"mood":["JK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757369130225,"title":"Dirty(Agnes)","bpm":"153-159","key":"10B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757369168233,"title":"Hooch","bpm":"148-153","key":"1B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757369207229,"title":"R-Cali","bpm":"148-153","key":"4B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757369411783,"title":"CollardGreens","bpm":"152-155","key":"1B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757369450674,"title":"Daddy(SexyyRed)","bpm":"125-131","key":"10B","toneless":"-","place":["MID"],"mood":["COOL"],"star":3,"fav":false,"oddity":true},
+                {"id":1757369521926,"title":"Onomos","bpm":"151-155","key":"7B","toneless":"T","place":["OPEN","STA","MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757369554737,"title":"OrangeSoda","bpm":"170-174","key":"2B","toneless":"-","place":["MID"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757369588726,"title":"I'mNotLikeThatIRL","bpm":"145-152","key":"7B","toneless":"T","place":["OPEN","ANY"],"mood":["JK"],"star":1,"fav":false,"oddity":false},
+                {"id":1757369764455,"title":"LostInChaos","bpm":"148-153","key":"9B","toneless":"-","place":["STA","MID"],"mood":["SRS"],"star":2,"fav":true,"oddity":false},
+                {"id":1757369796364,"title":"Fucktopia","bpm":"150-157","key":"9B","toneless":"T","place":["OPEN","STA","MID"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757369827727,"title":"PrixChoc","bpm":"123-132","key":"8A","toneless":"-","place":["OPEN"],"mood":["SRS"],"star":5,"fav":true,"oddity":false},
+                {"id":1757369854610,"title":"OhShit","bpm":"139-144","key":"11B","toneless":"T","place":["OPEN"],"mood":["COOL"],"star":3,"fav":false,"oddity":false},
+                {"id":1757369889384,"title":"Can'tStopNight","bpm":"154-158","key":"9B","toneless":"-","place":["MID","END","CLOSE"],"mood":["FUN"],"star":1,"fav":false,"oddity":false},
+                {"id":1757369919370,"title":"GoBerserk","bpm":"149-153","key":"11B","toneless":"T","place":["MID","END","CLOSE"],"mood":["JK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757369944314,"title":"Xtatic","bpm":"134-142","key":"9B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757369977237,"title":"BounzBack","bpm":"142-149","key":"5B","toneless":"T","place":["OPEN","STA","MID"],"mood":["JK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757370011014,"title":"DoubleTake","bpm":"39-144","key":"3B","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757370043008,"title":"AllAboardStar","bpm":"130-140","key":"12A","toneless":"T","place":["OPEN","STA"],"mood":["SRS"],"star":4,"fav":true,"oddity":false},
+                {"id":1757370094179,"title":"FreakCertified","bpm":"146-156","key":"10B","toneless":"T","place":["OPEN","STA","MID"],"mood":["DARK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757370126998,"title":"LowFreqz","bpm":"129-135","key":"10B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757370154930,"title":"Barcode","bpm":"119-124","key":"6B","toneless":"-","place":["OPEN"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757370185048,"title":"1994-20","bpm":"137-141","key":"12B","toneless":"T","place":["ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757370238763,"title":"GenMfZ","bpm":"138-147","key":"2B","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757370270096,"title":"100%","bpm":"136-144","key":"10B","toneless":"-","place":["MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757370306294,"title":"OnlyLoveCan","bpm":"122-128","key":"3B","toneless":"-","place":["MID","END","CLOSE"],"mood":["SRS"],"star":3,"fav":false,"oddity":true},
+                {"id":1757370336625,"title":"Hec","bpm":"143-149","key":"5B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757370386134,"title":"HalfFaces","bpm":"144-152","key":"7B","toneless":"-","place":["MID","END","CLOSE"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757370415448,"title":"SideBySide","bpm":"127-134","key":"12A","toneless":"-","place":["ANY"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757370448266,"title":"Heartbeat","bpm":"119-129","key":"8A","toneless":"-","place":["OPEN","STA"],"mood":["FUN"],"star":5,"fav":true,"oddity":false},
+                {"id":1757370490657,"title":"NoMen","bpm":"144-154","key":"4B","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757370523888,"title":"LaughTrack","bpm":"145-153","key":"7A","toneless":"-","place":["ANY"],"mood":["SRS"],"star":4,"fav":false,"oddity":false},
+                {"id":1757433929105,"title":"Molecular","bpm":"143-148","key":"4B","toneless":"T","place":["STA","MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757433948615,"title":"Lost","bpm":"154-163","key":"4B","toneless":"-","place":["CLOSE","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757433981386,"title":"ThatTrack","bpm":"134-144","key":"2A","toneless":"T","place":["OPEN","STA","MID"],"mood":["SRS"],"star":4,"fav":true,"oddity":false},
+                {"id":1757434017976,"title":"GAS","bpm":"152-164","key":"2B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757434043219,"title":"SomethingISaid","bpm":"142-147","key":"2A","toneless":"T","place":["OPEN","STA","MID"],"mood":["SRS"],"star":4,"fav":false,"oddity":false},
+                {"id":1757434067538,"title":"HerNeck","bpm":"143-153","key":"10B","toneless":"-","place":["STA","MID"],"mood":["JK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757434109055,"title":"AutoCorrect","bpm":"158-164","key":"7B","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757434137799,"title":"OutOfTheRace","bpm":"154-163","key":"7B","toneless":"-","place":["OPEN"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757434163370,"title":"YOU&I","bpm":"147-154","key":"10B","toneless":"-","place":["MID","END","CLOSE"],"mood":["FUN"],"star":1,"fav":false,"oddity":false},
+                {"id":1757434197430,"title":"BelowSurface","bpm":"132-137","key":"4B","toneless":"T","place":["OPEN","STA"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757434234972,"title":"X-303","bpm":"141-151","key":"4B","toneless":"-","place":["OPEN","ANY"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757434258998,"title":"ILikeTheWay","bpm":"137-143","key":"11B","toneless":"T","place":["OPEN","STA","MID"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757434294250,"title":"SpiritRush","bpm":"149-166","key":"7B","toneless":"-","place":["OPEN","ANY"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757434318196,"title":"VoyVoy","bpm":"148-155","key":"8B","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757434338752,"title":"Reality","bpm":"136-145","key":"6B","toneless":"-","place":["STA","MID"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757434447384,"title":"Abiat","bpm":"112-119","key":"7B","toneless":"-","place":["OPEN"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757434503078,"title":"f@k€","bpm":"150-156","key":"10B","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":1,"fav":false,"oddity":false},
+                {"id":1757434546090,"title":"AsAMetaphor","bpm":"147-153","key":"2B","toneless":"-","place":["ANY"],"mood":["DARK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757434581754,"title":"HardNot2Kill","bpm":"137-145","key":"10B","toneless":"T","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757454898180,"title":"Apeshit(NYX)","bpm":"156-164","key":"9A","toneless":"T","place":["OPEN","ANY"],"mood":["SRS"],"star":2,"fav":true,"oddity":false},
+                {"id":1757454923997,"title":"BadGirls(NYX)","bpm":"143-151","key":"11A","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757454961497,"title":"BornSlippy(NYX)","bpm":"144-154","key":"6A","toneless":"T","place":["CLOSE","ANY"],"mood":["DARK"],"star":3,"fav":true,"oddity":false},
+                {"id":1757455064858,"title":"BuckyDoneGun(NYX)","bpm":"149-158","key":"2A","toneless":"T","place":["OPEN","ANY"],"mood":["SRS"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455174983,"title":"Calabria2007(NYX)","bpm":"135-144","key":"2A","toneless":"T","place":["CLOSE","ANY"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757455206295,"title":"Claustraphobic(NYX)","bpm":"143-151","key":"11A","toneless":"T","place":["OPEN","STA","MID"],"mood":["SRS"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455241849,"title":"EdgeOf17(NYX)","bpm":"148-156","key":"12B","toneless":"T","place":["END","CLOSE"],"mood":["FUN"],"star":1,"fav":true,"oddity":false},
+                {"id":1757455278033,"title":"Flatbed(NYX)","bpm":"150-155","key":"7A","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455305588,"title":"FutsalShuff(NYX)","bpm":"142-148","key":"6A","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757455331069,"title":"GetDown(NYX)","bpm":"139-147","key":"4B","toneless":"T","place":["MID","END","CLOSE"],"mood":["COOL"],"star":1,"fav":true,"oddity":false},
+                {"id":1757455358308,"title":"GiveItToMe(NYX)","bpm":"132-138","key":"6A","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455387331,"title":"GloryBox(NYX)","bpm":"134-141","key":"2A","toneless":"T","place":["OPEN","ANY"],"mood":["DARK"],"star":3,"fav":true,"oddity":false},
+                {"id":1757455414295,"title":"HeadsRoll(NYX)","bpm":"137-144","key":"1A","toneless":"T","place":["OPEN","STA","MID"],"mood":["DARK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455454539,"title":"HoodByAir(NYX)","bpm":"143-155","key":"8A","toneless":"T","place":["OPEN","STA","MID"],"mood":["DARK"],"star":3,"fav":true,"oddity":false},
+                {"id":1757455486110,"title":"IKNOW(NYX)","bpm":"141-145","key":"8A","toneless":"T","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757455514958,"title":"Insomnia(NYX)","bpm":"136-143","key":"10A","toneless":"T","place":["OPEN","ANY"],"mood":["DARK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455565891,"title":"OutMyFace(NYX)","bpm":"151-158","key":"4A","toneless":"T","place":["CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455597310,"title":"Jumpman(NYX)","bpm":"141-147","key":"1A","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455647553,"title":"Lemon(NYX)","bpm":"161-170","key":"1B","toneless":"T","place":["MID","END"],"mood":["JK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455688427,"title":"LikeAG6(NYX)","bpm":"138-146","key":"6A","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455733028,"title":"LockArf(NYX)","bpm":"145-153","key":"11A","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757455763039,"title":"LoveSosa(NYX)","bpm":"136-141","key":"10A","toneless":"T","place":["OPEN","STA","MID"],"mood":["JK"],"star":3,"fav":true,"oddity":false},
+                {"id":1757455787700,"title":"LPFJ2(NYX)","bpm":"141-147","key":"5B","toneless":"T","place":["ANY"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455844758,"title":"Magnolia(NYX)","bpm":"147-153","key":"10A","toneless":"T","place":["CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757455986910,"title":"NewFreezer(NYX)","bpm":"144-151","key":"4A","toneless":"T","place":["OPEN","STA","MID"],"mood":["COOL"],"star":2,"fav":true,"oddity":false},
+                {"id":1757456017175,"title":"Otherwise(NYX)","bpm":"146-153","key":"7B","toneless":"T","place":["MID","END","CLOSE"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757456076798,"title":"OUTOUT(NYX)","bpm":"132-138","key":"12A","toneless":"T","place":["OPEN","ANY"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757456109214,"title":"PassOut(NYX)","bpm":"153-162","key":"4A","toneless":"T","place":["CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757456140686,"title":"PickItUp(NYX)","bpm":"148-154","key":"5A","toneless":"T","place":["OPEN","STA","MID"],"mood":["COOL"],"star":2,"fav":true,"oddity":false},
+                {"id":1757456903276,"title":"Poppin(NYX)","bpm":"147-154","key":"10A","toneless":"T","place":["STA","MID"],"mood":["JK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757456934144,"title":"Prada(NYX)","bpm":"141-148","key":"8B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["SRS"],"star":2,"fav":true,"oddity":false},
+                {"id":1757456958602,"title":"PsychoKiller(NYX)","bpm":"142-151","key":"1B","toneless":"T","place":["MID","END"],"mood":["JK"],"star":1,"fav":true,"oddity":false},
+                {"id":1757456992310,"title":"500K(NYX)","bpm":"152-160","key":"2B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":1,"fav":true,"oddity":false},
+                {"id":1757457017825,"title":"Savage(NYX)","bpm":"145-152","key":"11A","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757457050674,"title":"Scream&Shout(NYX)","bpm":"137-141","key":"9B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":1,"fav":true,"oddity":false},
+                {"id":1757457080757,"title":"Snooze(NYX)","bpm":"142-149","key":"12B","toneless":"T","place":["STA","MID"],"mood":["SRS"],"star":1,"fav":true,"oddity":false},
+                {"id":1757457105777,"title":"SoUKno(NYX)","bpm":"143-146","key":"6A","toneless":"T","place":["OPEN","STA","MID"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757457131364,"title":"SpeedDrive(NYX)","bpm":"165-169","key":"7A","toneless":"T","place":["MID","END","CLOSE"],"mood":["FUN"],"star":2,"fav":true,"oddity":false},
+                {"id":1757457177298,"title":"Sprinter(NYX)","bpm":"138-145","key":"3A","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["DARK"],"star":2,"fav":true,"oddity":false},
+                {"id":1757457210813,"title":"Superstylin(NYX)","bpm":"133-139","key":"9A","toneless":"T","place":["OPEN","ANY"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757457236143,"title":"VonDutch(NYX)","bpm":"134-139","key":"2B","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["SRS"],"star":3,"fav":true,"oddity":false},
+                {"id":1757457263056,"title":"WAP(NYX)","bpm":"143-148","key":"3A","toneless":"T","place":["STA","MID"],"mood":["JK"],"star":3,"fav":true,"oddity":false},
+                {"id":1757457289059,"title":"What'sMyName(NYX)","bpm":"147-154","key":"11A","toneless":"T","place":["MID","END","CLOSE"],"mood":["SRS"],"star":2,"fav":true,"oddity":false},
+                {"id":1757457337668,"title":"NeverLetUGo","bpm":"138-144","key":"9A","toneless":"-","place":["ANY"],"mood":["JK"],"star":1,"fav":false,"oddity":false},
+                {"id":1757457370200,"title":"WirSuchenDich","bpm":"148-155","key":"5A","toneless":"-","place":["MID","END"],"mood":["JK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757457391747,"title":"Graver","bpm":"134-141","key":"7B","toneless":"-","place":["STA","MID"],"mood":["DARK"],"star":3,"fav":false,"oddity":false},
+                {"id":1757457413844,"title":"GhostRide","bpm":"159-166","key":"12B","toneless":"-","place":["MID","END","CLOSE"],"mood":["FUN"],"star":3,"fav":false,"oddity":true},
+                {"id":1757457448434,"title":"HighTechBalance","bpm":"137-144","key":"7A","toneless":"-","place":["CLOSE","ANY"],"mood":["FUN"],"star":3,"fav":false,"oddity":false},
+                {"id":1757457474066,"title":"StupidHoe","bpm":"96-104","key":"11A","toneless":"T","place":["OPEN","ANY"],"mood":["JK"],"star":3,"fav":false,"oddity":true},
+                {"id":1757457502988,"title":"Heartbreaka","bpm":"144-153","key":"7B","toneless":"-","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757457533804,"title":"RareBargainBin","bpm":"135-143","key":"9A","toneless":"T","place":["OPEN","ANY"],"mood":["FUN"],"star":5,"fav":false,"oddity":false},
+                {"id":1757458495933,"title":"TheyJustWantPics","bpm":"155-160","key":"9A","toneless":"-","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757458520597,"title":"NoFuture","bpm":"140-146","key":"10B","toneless":"-","place":["MID","END"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757458558601,"title":"BringItDon'tSingIt","bpm":"143-148","key":"1A","toneless":"T","place":["OPEN","STA","MID"],"mood":["SRS"],"star":3,"fav":false,"oddity":false},
+                {"id":1757458779489,"title":"HEGDL","bpm":"138-146","key":"5A","toneless":"-","place":["STA","MID"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757458827119,"title":"NoIdea(NYX)","bpm":"134-143","key":"2A","toneless":"T","place":["STA","MID"],"mood":["SRS"],"star":5,"fav":true,"oddity":false},
+                {"id":1757461763564,"title":"GucciGang(NYX)","bpm":"137-142","key":"11B","toneless":"T","place":["OPEN","ANY"],"mood":["FUN"],"star":5,"fav":true,"oddity":false},
+                {"id":1757461787021,"title":"Attracted(NYX)","bpm":"127-133","key":"2B","toneless":"T","place":["OPEN","MID"],"mood":["FUN"],"star":5,"fav":true,"oddity":false},
+                {"id":1757461818294,"title":"TooManyMan(NYX)","bpm":"139-145","key":"11A","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757461846709,"title":"SexyBack(NYX)","bpm":"11A","key":"11A","toneless":"T","place":["STA","MID"],"mood":["JK"],"star":4,"fav":true,"oddity":false},
+                {"id":1757461876460,"title":"OrangeSoda(NYX)","bpm":"145-151","key":"3A","toneless":"T","place":["ANY"],"mood":["COOL"],"star":4,"fav":true,"oddity":false},
+                {"id":1757461921805,"title":"Lock&Load(NYX)","bpm":"138-146","key":"8B","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757461947078,"title":"GinsengStrip(NYX)","bpm":"144-149","key":"6A","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757461974833,"title":"EverythingIs(NYX)","bpm":"130-137","key":"3A","toneless":"T","place":["CLOSE","ANY"],"mood":["SRS"],"star":4,"fav":true,"oddity":false},
+                {"id":1757462002825,"title":"BrotherStone(NYX)","bpm":"145-153","key":"12B","toneless":"T","place":["STA","MID"],"mood":["DARK"],"star":2,"fav":false,"oddity":false},
+                {"id":1757462030816,"title":"ActUp(NYX)","bpm":"164-170","key":"8A","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757462065163,"title":"BackToLife(NYX)","bpm":"139-145","key":"11A","toneless":"T","place":["CLOSE","ANY"],"mood":["SRS"],"star":4,"fav":true,"oddity":false},
+                {"id":1757462102432,"title":"B.S.A.S.","bpm":"146-152","key":"4B","toneless":"-","place":["MID","END"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757462125561,"title":"EQetamine","bpm":"133-141","key":"5A","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":2,"fav":false,"oddity":false},
+                {"id":1757462149116,"title":"Wun","bpm":"136-145","key":"7A","toneless":"T","place":["CLOSE","ANY"],"mood":["FUN"],"star":4,"fav":false,"oddity":false},
+                {"id":1757462181614,"title":"Sharivari","bpm":"134-141","key":"9A","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757462208354,"title":"BoomBoomPow","bpm":"129-138","key":"11A","toneless":"T","place":["END","CLOSE"],"mood":["FUN"],"star":4,"fav":false,"oddity":false},
+                {"id":1757462235704,"title":"DaRevolution","bpm":"128-138","key":"9A","toneless":"-","place":["ANY"],"mood":["FUN"],"star":4,"fav":false,"oddity":false},
+                {"id":1757462488278,"title":"Cloud69","bpm":"136-143","key":"5A","toneless":"-","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":4,"fav":false,"oddity":false},
+                {"id":1757462564907,"title":"LowLife(NYX)","bpm":"142-150","key":"5A","toneless":"T","place":["OPEN","STA","MID"],"mood":["FUN"],"star":3,"fav":true,"oddity":false},
+                {"id":1757462602196,"title":"CollardGreens(NYX)","bpm":"149-157","key":"2A","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757462630136,"title":"DanceWivMe(NYX)","bpm":"130-137","key":"3A","toneless":"T","place":["CLOSE","ANY"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757462697616,"title":"DARE(NYX)","bpm":"139-145","key":"9A","toneless":"T","place":["OPEN","CLOSE","ANY"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757462771338,"title":"i'mill(NYX)","bpm":"149-155","key":"4A","toneless":"T","place":["STA","MID"],"mood":["FUN"],"star":4,"fav":true,"oddity":false},
+                {"id":1757462798418,"title":"StayHigh(NYX)","bpm":"146-155","key":"9A","toneless":"T","place":["CLOSE","ANY"],"mood":["SRS"],"star":3,"fav":true,"oddity":false}
+            ];
+        }
+
+        // ===== NATURAL TOUCH HANDLING =====
+        function handleTouchStart(event) {
+            const target = event.target;
+            
+            if (target.closest('.track-item')) {
+                const trackItem = target.closest('.track-item');
+                touchStartTime = Date.now();
+                touchStartX = event.touches[0].clientX;
+                touchStartY = event.touches[0].clientY;
+                touchMoved = false;
+                activeTrackItem = trackItem;
+                
+                // Add visual feedback
+                trackItem.classList.add('touch-active');
+                
+                // Removed event.preventDefault() to allow scrolling
+            }
+        }
+
+        function handleTouchMove(event) {
+            if (!activeTrackItem) return;
+            
+            const currentX = event.touches[0].clientX;
+            const currentY = event.touches[0].clientY;
+            const deltaX = Math.abs(currentX - touchStartX);
+            const deltaY = Math.abs(currentY - touchStartY);
+            
+            // Track if finger has moved significantly
+            if (deltaX > 5 || deltaY > 5) {
+                touchMoved = true;
+            }
+            
+            // No longer preventing scroll behavior
+        }
+
+        function handleTouchEnd(event) {
+            if (!activeTrackItem) return;
+            
+            const touchEndTime = Date.now();
+            const touchDuration = touchEndTime - touchStartTime;
+            
+            // Only select if it's a quick tap (under 300ms) with minimal movement
+            if (!touchMoved && touchDuration < 300) {
+                const trackId = parseInt(activeTrackItem.dataset.trackId);
+                selectCurrentTrack(trackId);
+            }
+            
+            // Clean up
+            activeTrackItem.classList.remove('touch-active');
+            activeTrackItem = null;
+            touchMoved = false;
+        }
+
+        // ===== EVENT HANDLING =====
+        function initializeEventListeners() {
+            // Regular click events for non-touch interactions
+            document.addEventListener('click', handleGlobalClick);
+            
+            // Natural touch events for mobile scrolling
+            document.addEventListener('touchstart', handleTouchStart, { passive: true });
+            document.addEventListener('touchmove', handleTouchMove, { passive: true });
+            document.addEventListener('touchend', handleTouchEnd, { passive: true });
+            
+            // Keyboard events
+            document.addEventListener('keydown', handleKeyDown);
+            
+            log('Event listeners initialized with natural scrolling');
+        }
+
+        function handleGlobalClick(event) {
+            const target = event.target;
+            
+            // Handle filter bar clicks
+            if (target.closest('.filter-bar')) {
+                const bar = target.closest('.filter-bar');
+                const action = bar.dataset.action;
+                handleBarClick(action);
+                return;
+            }
+            
+            // Handle action button clicks
+            if (target.closest('.action-button')) {
+                const button = target.closest('.action-button');
+                const action = button.dataset.action;
+                handleActionClick(action);
+                return;
+            }
+            
+            // Handle modal option clicks
+            if (target.closest('.option-item')) {
+                const option = target.closest('.option-item');
+                handleOptionClick(option);
+                return;
+            }
+            
+            // Handle modal background clicks
+            if (target.classList.contains('modal')) {
+                closeAllModals();
+                return;
+            }
+        }
+
+        function handleKeyDown(event) {
+            // Escape key closes modals
+            if (event.key === 'Escape') {
+                closeAllModals();
+                return;
+            }
+            
+            // Enter key in search input
+            if (event.key === 'Enter' && document.activeElement.id === 'searchInput') {
+                const firstResult = document.querySelector('#searchResults .option-item');
+                if (firstResult) {
+                    const trackId = parseInt(firstResult.dataset.trackId);
+                    selectCurrentTrack(trackId);
+                    closeAllModals();
+                }
+            }
+        }
+
+        // ===== UI INTERACTIONS =====
+        function handleBarClick(action) {
+            switch (action) {
+                case 'search':
+                    openSearchModal();
+                    break;
+                case 'place':
+                    openModal('placeModal');
+                    break;
+                case 'mood':
+                    openModal('moodModal');
+                    break;
+                case 'star':
+                    openModal('starModal');
+                    break;
+            }
+        }
+
+        function handleActionClick(action) {
+            switch (action) {
+                case 'reset':
+                    showConfirmModal();
+                    break;
+                case 'undo':
+                    undoTrackSelection();
+                    break;
+                case 'search':
+                    performSearch();
+                    break;
+            }
+        }
+
+        function handleOptionClick(option) {
+            const modal = option.closest('.modal');
+            const value = option.dataset.value;
+            
+            if (modal.id === 'searchModal') {
+                if (option.dataset.action === 'remove') {
+                    clearCurrentTrack();
+                } else {
+                    const trackId = parseInt(option.dataset.trackId);
+                    selectCurrentTrack(trackId);
+                }
+            } else if (modal.id === 'placeModal') {
+                appState.selectedPlace = value;
+                updateBarDisplay('placeBar', 'placeContent', value);
+                appState.selectedPlace && document.getElementById('placeBar').classList.add('active');
+            } else if (modal.id === 'moodModal') {
+                appState.selectedMood = value;
+                updateBarDisplay('moodBar', 'moodContent', value);
+                appState.selectedMood && document.getElementById('moodBar').classList.add('active');
+            } else if (modal.id === 'starModal') {
+                appState.selectedStar = parseInt(value);
+                updateBarDisplay('starBar', 'starContent', value + ' ⭐');
+                appState.selectedStar && document.getElementById('starBar').classList.add('active');
+            }
+            
+            closeAllModals();
+            updateResults();
+        }
+
+        function updateBarDisplay(barId, contentId, value) {
+            const contentElement = document.getElementById(contentId);
+            if (contentElement) {
+                contentElement.textContent = value;
+            }
+        }
+
+        // ===== MODAL MANAGEMENT =====
+        function openSearchModal() {
+            const modal = document.getElementById('searchModal');
+            const input = document.getElementById('searchInput');
+            
+            input.value = '';
+            filterSearchResults('');
+            modal.classList.add('show');
+            
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('show');
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('show');
+            });
+        }
+
+        // ===== RESET CONFIRMATION =====
+        function showConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.add('show');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('show');
+        }
+
+        function confirmReset() {
+            closeConfirmModal();
+            sessionReset();
+        }
+
+        // ===== TRACK MANAGEMENT =====
+        function selectCurrentTrack(trackId) {
+            const newTrack = appState.tracks.find(t => t.id === trackId);
+            
+            if (newTrack) {
+                // If there's a current track, add it to played tracks (since we're selecting a new one)
+                if (appState.currentTrack && appState.currentTrack.id !== newTrack.id) {
+                    if (!appState.playedTracks.includes(appState.currentTrack.id)) {
+                        appState.playedTracks.push(appState.currentTrack.id);
+                        log('Track marked as played:', appState.currentTrack.title);
+                    }
+                }
+                
+                // Set previous track for undo functionality
+                if (appState.currentTrack) {
+                    appState.previousTrack = appState.currentTrack;
+                    document.getElementById('undoBtn').classList.add('active');
+                }
+                
+                appState.currentTrack = newTrack;
+                document.getElementById('currentTrackContent').textContent = newTrack.title;
+                document.getElementById('currentTrackBar').classList.add('active');
+                
+                updateResults();
+                log('Track selected:', newTrack.title);
+            }
+        }
+
+        function clearCurrentTrack() {
+            if (appState.currentTrack) {
+                appState.previousTrack = appState.currentTrack;
+                appState.currentTrack = null;
+                
+                document.getElementById('currentTrackContent').textContent = 'Tap to search for a track...';
+                document.getElementById('currentTrackBar').classList.remove('active');
+                document.getElementById('undoBtn').classList.add('active');
+                
+                updateResults();
+            }
+        }
+
+        function undoTrackSelection() {
+            if (appState.previousTrack) {
+                appState.currentTrack = appState.previousTrack;
+                appState.previousTrack = null;
+                
+                document.getElementById('currentTrackContent').textContent = appState.currentTrack.title;
+                document.getElementById('undoBtn').classList.remove('active');
+                
+                updateResults();
+            }
+        }
+
+        function sessionReset() {
+            appState.currentTrack = null;
+            appState.previousTrack = null;
+            appState.selectedPlace = null;
+            appState.selectedMood = null;
+            appState.selectedStar = null;
+            appState.playedTracks = []; // Clear played tracks
+            
+            document.getElementById('currentTrackContent').textContent = 'Tap to search for a track...';
+            document.getElementById('currentTrackBar').classList.remove('active');
+            
+            document.getElementById('placeContent').textContent = 'Tap to select...';
+            document.getElementById('placeBar').classList.remove('active');
+            
+            document.getElementById('moodContent').textContent = 'Tap to select...';
+            document.getElementById('moodBar').classList.remove('active');
+            
+            document.getElementById('starContent').textContent = 'Tap to select...';
+            document.getElementById('starBar').classList.remove('active');
+            
+            document.getElementById('undoBtn').classList.remove('active');
+            
+            updateResults();
+            log('Session reset - all played tracks cleared');
+        }
+
+        // ===== SEARCH FUNCTIONALITY =====
+        function filterSearchResults(query) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            let html = '';
+            
+            // Add REMOVE option if there's a current track
+            if (appState.currentTrack) {
+                html += `
+                    <div class="option-item" data-action="remove">
+                        <strong>REMOVE</strong> - Clear current track selection
+                    </div>
+                `;
+            }
+            
+            if (query.length === 0) {
+                html += '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">Type to search tracks...</div>';
+                resultsDiv.innerHTML = html;
+                return;
+            }
+            
+            const filtered = appState.tracks.filter(track => 
+                track.title.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (filtered.length === 0) {
+                html += '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">No tracks found</div>';
+                resultsDiv.innerHTML = html;
+                return;
+            }
+            
+            html += filtered.map(track => `
+                <div class="option-item" data-track-id="${track.id}">
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold; color: #00d4ff;">${track.title}</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">
+                            ${track.bpm} ${track.key}${track.toneless !== '-' ? ` (${track.toneless})` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // ===== RESULTS MANAGEMENT =====
+        function updateResults() {
+            const resultsList = document.getElementById('resultsList');
+            
+            // Show initial message if no filters are selected
+            if (!appState.selectedPlace && !appState.selectedMood && !appState.selectedStar) {
+                resultsList.innerHTML = '<div class="no-tracks-message">Select filters (Place, Mood, Star) and click SEARCH to see recommendations</div>';
+                return;
+            }
+            
+            const recommendations = filterTracks();
+            
+            if (recommendations.length === 0) {
+                resultsList.innerHTML = '<div class="no-tracks-message">No tracks match your criteria</div>';
+                return;
+            }
+            
+            // Sort recommendations: FAV and ODD tracks first, then by title
+            recommendations.sort((a, b) => {
+                // Fav tracks first
+                if (a.fav && !b.fav) return -1;
+                if (!a.fav && b.fav) return 1;
+
+                // Then oddity tracks
+                if (a.oddity && !b.oddity) return -1;
+                if (!a.oddity && b.oddity) return 1;
+                
+                return a.title.localeCompare(b.title);
+            });
+            
+            resultsList.innerHTML = recommendations.map(track => {
+                let classList = 'track-item';
+                if (track.fav) {
+                    classList += ' fav';
+                } else if (track.oddity) {
+                    classList += ' odd';
+                }
+
+                return `
+                    <div class="${classList}" data-track-id="${track.id}">
+                        <div class="track-title">${track.title}${track.fav ? ' ⭐' : ''}${track.oddity ? ' ⚡' : ''}</div>
+                        <div class="track-details">
+                            ${track.bpm} ${track.key}${track.toneless !== '-' ? ` (${track.toneless})` : ''} ${track.mood.join(', ')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== TRACK FILTERING =====
+        function filterTracks() {
+            return appState.tracks.filter(track => {
+                // Don't recommend the currently playing track
+                if (appState.currentTrack && track.id === appState.currentTrack.id) return false;
+                
+                // Don't show tracks that have been played (unless reset)
+                if (appState.playedTracks.includes(track.id)) return false;
+                
+                // PLACE match
+                if (appState.selectedPlace && !track.place.includes(appState.selectedPlace)) {
+                    return false;
+                }
+                
+                // MOOD match (grouped logic)
+                if (appState.selectedMood) {
+                    let moodMatches = false;
+                    if (appState.selectedMood === 'SRS') {
+                        moodMatches = track.mood.includes('SRS') || track.mood.includes('DARK') || track.mood.includes('FUN');
+                    } else if (appState.selectedMood === 'JK') {
+                        moodMatches = track.mood.includes('JK') || track.mood.includes('COOL') || track.mood.includes('FUN');
+                    } else if (appState.selectedMood === 'BOTH') {
+                        // "BOTH" means any mood, so it always matches if selected
+                        moodMatches = true;
+                    } else {
+                        // Fallback to direct mood match if a specific mood is selected
+                        moodMatches = track.mood.includes(appState.selectedMood);
+                    }
+                    if (!moodMatches) return false;
+                }
+                
+                // STAR rating
+                if (appState.selectedStar && track.star < appState.selectedStar) {
+                    return false;
+                }
+
+                // BPM Range Match
+                if (appState.currentTrack) {
+                    const currentBpmRange = appState.currentTrack.bpm.split('-').map(Number);
+                    const trackBpmRange = track.bpm.split('-').map(Number);
+
+                    const currentMin = currentBpmRange[0];
+                    const currentMax = currentBpmRange.length > 1 ? currentBpmRange[1] : currentBpmRange[0]; // Handle single BPM
+                    
+                    const trackMin = trackBpmRange[0];
+                    const trackMax = trackBpmRange.length > 1 ? trackBpmRange[1] : trackBpmRange[0]; // Handle single BPM
+
+                    // Check for overlap
+                    if (currentMax < trackMin || currentMin > trackMax) {
+                        return false; // No overlap
+                    }
+                }
+                
+                return true;
+            });
+        }
+
+        // ===== SEARCH INPUT HANDLING =====
+        function initializeSearchInput() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    filterSearchResults(this.value);
+                });
+            }
+        }
+
+        // ===== INITIALIZATION =====
+        async function initializeApp() {
+            log('🎵 DJ Mix System - Complete Edition 🎵');
+            
+            // Load tracks asynchronously
+            appState.tracks = await getDefaultTracks();
+            
+            // Update mood modal with grouped mood options
+            const moodOptionsContainer = document.querySelector('#moodModal .option-list');
+            if (moodOptionsContainer) {
+                moodOptionsContainer.innerHTML = `
+                    <div class="option-item" data-value="SRS">SRS (contains: SRS, DARK, FUN)</div>
+                    <div class="option-item" data-value="JK">JK (contains: JK, COOL, FUN)</div>
+                    <div class="option-item" data-value="BOTH">BOTH (contains: all moods)</div>
+                `;
+                log('Mood options populated with grouped options');
+            }
+            
+            initializeEventListeners();
+            initializeSearchInput();
+            
+            updateResults();
+            
+            appState.isInitialized = true;
+            log('✅ DJ Mix Mobile initialized with', appState.tracks.length, 'tracks');
+        }
+// ... existing code ...
+    // Allow clicking on available tracks to select them as current track
+    document.addEventListener('click', function(event) {
+        const trackItem = event.target.closest('.track-item');
+        if (trackItem && trackItem.dataset.trackId) {
+            const trackId = parseInt(trackItem.dataset.trackId);
+            selectCurrentTrack(trackId);
+        }
+    });
+        // Start the application
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
